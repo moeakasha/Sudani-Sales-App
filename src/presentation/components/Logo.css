@@ -1,0 +1,17 @@
+.logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo {
+  height: 56px;
+  width: auto;
+}
+
+/* When logo is in header, remove margin */
+.header .logo-container {
+  margin-bottom: 0;
+  justify-content: flex-start;
+}
+
