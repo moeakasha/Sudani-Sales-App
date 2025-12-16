@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../infrastructure/supabase/client';
+import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { Logo } from './Logo';
 import './DashboardHeader.css';
 
@@ -8,29 +8,30 @@ interface DashboardHeaderProps {
   onMenuClick?: () => void;
 }
 
-export const DashboardHeader = ({}: DashboardHeaderProps) => {
-  const [user, setUser] = useState<{ email?: string; name?: string; organization?: string } | null>(null);
+export const DashboardHeader = ({ onMenuClick }: DashboardHeaderProps) => {
+  const { user: authUser, signOut } = useAuth();
+  const [userDisplay, setUserDisplay] = useState<{ email?: string; name?: string; organization?: string } | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const email = user.email || '';
-        const orgName = email.split('@')[1]?.split('.')[0] || 'Organization';
-        setUser({
-          email: email,
-          name: user.user_metadata?.full_name || user.user_metadata?.name || email.split('@')[0],
-          organization: user.user_metadata?.organization || orgName,
-        });
-      }
-    };
-    getUser();
-  }, []);
+    if (authUser) {
+      const email = authUser.email || '';
+      const orgName = email.split('@')[1]?.split('.')[0] || 'Organization';
+      setUserDisplay({
+        email: email,
+        name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || email.split('@')[0],
+        organization: authUser.user_metadata?.organization || orgName,
+      });
+    }
+  }, [authUser]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/');
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const getUserInitials = (name: string) => {
@@ -45,6 +46,9 @@ export const DashboardHeader = ({}: DashboardHeaderProps) => {
   return (
     <header className="dashboard-header">
       <div className="header-left">
+        <button className="menu-toggle" onClick={onMenuClick} aria-label="Toggle menu">
+          <span className="material-symbols-outlined">menu</span>
+        </button>
         <Logo />
         <div className="search-container">
           <input
@@ -59,14 +63,14 @@ export const DashboardHeader = ({}: DashboardHeaderProps) => {
         <button className="notification-button" aria-label="Notifications">
           <span className="material-symbols-outlined">notifications</span>
         </button>
-        {user && (
+        {userDisplay && (
           <div className="user-info">
             <div className="user-details">
-              <span className="user-name">{user.name}</span>
-              <span className="user-organization">{user.email}</span>
+              <span className="user-name">{userDisplay.name}</span>
+              <span className="user-organization">{userDisplay.email}</span>
             </div>
             <div className="user-avatar">
-              {getUserInitials(user.name || 'U')}
+              {getUserInitials(userDisplay.name || 'U')}
             </div>
           </div>
         )}

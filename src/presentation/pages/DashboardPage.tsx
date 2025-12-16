@@ -1,30 +1,44 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { DashboardSidebar } from '../components/DashboardSidebar';
 import { DashboardHeader } from '../components/DashboardHeader';
 import { DashboardContent } from '../components/DashboardContent';
-import { supabase } from '../../infrastructure/supabase/client';
 import './DashboardPage.css';
 
 export const DashboardPage = () => {
-  const navigate = useNavigate();
+  // Start with sidebar open on desktop, closed on mobile
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
 
+  // Handle window resize
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        navigate('/');
+    const handleResize = () => {
+      if (window.innerWidth > 768) {
+        setIsSidebarOpen(true);
+      } else {
+        setIsSidebarOpen(false);
       }
     };
-    checkAuth();
-  }, [navigate]);
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
   return (
     <div className="dashboard-page">
-      <DashboardHeader onMenuClick={() => {}} />
+      <DashboardHeader onMenuClick={toggleSidebar} />
       <div className="dashboard-layout">
-        <DashboardSidebar isOpen={true} onToggle={() => {}} />
-        <div className="dashboard-main sidebar-open">
+        {/* Backdrop for mobile */}
+        {isSidebarOpen && window.innerWidth <= 768 && (
+          <div 
+            className="sidebar-backdrop visible" 
+            onClick={toggleSidebar}
+          />
+        )}
+        <DashboardSidebar isOpen={isSidebarOpen} onToggle={toggleSidebar} />
+        <div className={`dashboard-main ${isSidebarOpen ? 'sidebar-open' : ''}`}>
           <DashboardContent />
         </div>
       </div>

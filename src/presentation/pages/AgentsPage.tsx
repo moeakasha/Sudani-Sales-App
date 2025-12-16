@@ -25,7 +25,8 @@ export const AgentsPage = () => {
   const [sortField, setSortField] = useState<SortField>('Agent ID');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // Start with sidebar open on desktop, closed on mobile
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   
   // Edit modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -34,6 +35,7 @@ export const AgentsPage = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
+    // Fetch agents data (auth already checked by ProtectedRoute)
     fetchAgents();
   }, []);
 
@@ -41,23 +43,46 @@ export const AgentsPage = () => {
     applyFilters();
   }, [agents, searchQuery, sortField, sortOrder, statusFilter]);
 
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768) {
+        setIsSidebarOpen(true);
+      } else {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const fetchAgents = async () => {
     try {
       setLoading(true);
 
-      // Fetch all agents
+      // Fetch all agents (RLS allows authenticated users to read)
       const { data: agentsData, error: agentsError } = await supabase
         .from('Agent')
         .select('*');
 
-      if (agentsError) throw agentsError;
+      if (agentsError) {
+        console.error('Error fetching agents:', agentsError);
+        if (agentsError.message.includes('permission') || agentsError.message.includes('policy')) {
+          alert('Permission denied. Please contact your administrator.');
+        }
+        throw agentsError;
+      }
 
-      // Fetch customer counts for each agent
+      // Fetch customer counts for each agent (RLS allows authenticated users to read)
       const { data: customers, error: customersError } = await supabase
         .from('Customer_Data')
         .select('"Agent ID"');
 
-      if (customersError) throw customersError;
+      if (customersError) {
+        console.error('Error fetching customers:', customersError);
+        throw customersError;
+      }
 
       // Count customers per agent
       const agentCustomerCounts = new Map<number, number>();
@@ -217,12 +242,21 @@ export const AgentsPage = () => {
     try {
       setIsSaving(true);
 
+      // Update agent (RLS allows authenticated users to write)
       const { error } = await supabase
         .from('Agent')
         .update({ 'Full Name': editedName.trim() })
         .eq('Agent ID', selectedAgent['Agent ID']);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating agent:', error);
+        if (error.message.includes('permission') || error.message.includes('policy')) {
+          alert('Permission denied. You do not have permission to update this agent.');
+        } else {
+          alert('Failed to update agent. Please try again.');
+        }
+        throw error;
+      }
 
       // Update local state
       const updatedAgents = agents.map(agent =>
@@ -235,17 +269,27 @@ export const AgentsPage = () => {
       handleCloseModal();
     } catch (error) {
       console.error('Error updating agent:', error);
-      alert('Failed to update agent. Please try again.');
     } finally {
       setIsSaving(false);
     }
   };
 
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
   return (
     <div className="dashboard-page">
-      <DashboardHeader onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
+      <DashboardHeader onMenuClick={toggleSidebar} />
       <div className="dashboard-layout">
-        <DashboardSidebar isOpen={isSidebarOpen} />
+        {/* Backdrop for mobile */}
+        {isSidebarOpen && window.innerWidth <= 768 && (
+          <div 
+            className="sidebar-backdrop visible" 
+            onClick={toggleSidebar}
+          />
+        )}
+        <DashboardSidebar isOpen={isSidebarOpen} onToggle={toggleSidebar} />
         <div className={`dashboard-main ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
           <main className="agents-content">
             <div className="page-header">
@@ -396,6 +440,60 @@ export const AgentsPage = () => {
                       )}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="mobile-card-list">
+                  {filteredAgents.length === 0 ? (
+                    <div className="empty-state" style={{ background: '#ffffff', borderRadius: '8px', padding: '4rem 2rem' }}>
+                      <span className="material-symbols-outlined empty-icon">person_off</span>
+                      <p>No agents found</p>
+                      <small>Try adjusting your search or filters</small>
+                    </div>
+                  ) : (
+                    filteredAgents.map((agent) => (
+                      <div key={agent['Agent ID']} className="agent-card">
+                        <div className="agent-card-header">
+                          <div className="agent-avatar">
+                            {getInitials(agent['Full Name'])}
+                          </div>
+                          <div className="agent-info">
+                            <div className="agent-name">{agent['Full Name']}</div>
+                          </div>
+                        </div>
+                        <div className="agent-card-body">
+                          <div className="agent-card-row">
+                            <span className="agent-card-label">Telegram ID</span>
+                            <span className="agent-card-value">{agent['Agent ID']}</span>
+                          </div>
+                          <div className="agent-card-row">
+                            <span className="agent-card-label">Join Date</span>
+                            <span className="agent-card-value">{formatDate(agent.created_at || '')}</span>
+                          </div>
+                          <div className="agent-card-row">
+                            <span className="agent-card-label">Customers</span>
+                            <span className="agent-card-value customer-count">{agent.customerCount || 0}</span>
+                          </div>
+                          <div className="agent-card-row">
+                            <span className="agent-card-label">Status</span>
+                            <span className={`status-badge ${(agent.customerCount || 0) > 0 ? 'status-active' : 'status-inactive'}`}>
+                              {(agent.customerCount || 0) > 0 ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="agent-card-footer">
+                          <button
+                            className="action-button edit-button"
+                            onClick={() => handleEditClick(agent)}
+                            title="Edit agent"
+                          >
+                            <span className="material-symbols-outlined">edit</span>
+                            <span>Edit</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </>
             )}

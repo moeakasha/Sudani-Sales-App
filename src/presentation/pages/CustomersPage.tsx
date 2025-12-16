@@ -23,11 +23,13 @@ export const CustomersPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('Customer ID');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // Start with sidebar open on desktop, closed on mobile
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
 
   const [agents, setAgents] = useState<{ id: number; name: string }[]>([]);
 
   useEffect(() => {
+    // Fetch customers data (auth already checked by ProtectedRoute)
     fetchCustomers();
   }, []);
 
@@ -35,23 +37,46 @@ export const CustomersPage = () => {
     applyFilters();
   }, [customers, searchQuery, sortField, sortOrder]);
 
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768) {
+        setIsSidebarOpen(true);
+      } else {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const fetchCustomers = async () => {
     try {
       setLoading(true);
 
-      // Fetch all customers
+      // Fetch all customers (RLS allows authenticated users to read)
       const { data: customersData, error: customersError } = await supabase
         .from('Customer_Data')
         .select('*');
 
-      if (customersError) throw customersError;
+      if (customersError) {
+        console.error('Error fetching customers:', customersError);
+        if (customersError.message.includes('permission') || customersError.message.includes('policy')) {
+          alert('Permission denied. Please contact your administrator.');
+        }
+        throw customersError;
+      }
 
-      // Fetch all agents to map agent names
+      // Fetch all agents to map agent names (RLS allows authenticated users to read)
       const { data: agentsData, error: agentsError } = await supabase
         .from('Agent')
         .select('"Agent ID", "Full Name"');
 
-      if (agentsError) throw agentsError;
+      if (agentsError) {
+        console.error('Error fetching agents:', agentsError);
+        throw agentsError;
+      }
 
       // Create agent ID to name map
       const agentMap = new Map<number, string>();
@@ -189,11 +214,22 @@ export const CustomersPage = () => {
     document.body.removeChild(link);
   };
 
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
   return (
     <div className="dashboard-page">
-      <DashboardHeader onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
+      <DashboardHeader onMenuClick={toggleSidebar} />
       <div className="dashboard-layout">
-        <DashboardSidebar isOpen={isSidebarOpen} />
+        {/* Backdrop for mobile */}
+        {isSidebarOpen && window.innerWidth <= 768 && (
+          <div 
+            className="sidebar-backdrop visible" 
+            onClick={toggleSidebar}
+          />
+        )}
+        <DashboardSidebar isOpen={isSidebarOpen} onToggle={toggleSidebar} />
         <div className={`dashboard-main ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
           <main className="customers-content">
             <div className="page-header">
@@ -308,6 +344,49 @@ export const CustomersPage = () => {
                       )}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="mobile-card-list">
+                  {filteredCustomers.length === 0 ? (
+                    <div className="empty-state" style={{ background: '#ffffff', borderRadius: '8px', padding: '4rem 2rem' }}>
+                      <span className="material-symbols-outlined empty-icon">group_off</span>
+                      <p>No customers found</p>
+                      <small>Try adjusting your search or filters</small>
+                    </div>
+                  ) : (
+                    filteredCustomers.map((customer) => (
+                      <div key={customer['Customer ID']} className="customer-card">
+                        <div className="customer-card-header">
+                          <div className="customer-avatar">
+                            {getInitials(customer['Customer_Name'])}
+                          </div>
+                          <div className="customer-info">
+                            <div className="customer-name">{customer['Customer_Name']}</div>
+                          </div>
+                        </div>
+                        <div className="customer-card-body">
+                          <div className="customer-card-row">
+                            <span className="customer-card-label">Phone</span>
+                            <span className="customer-card-value">{customer['Customer_Mobile'] || 'N/A'}</span>
+                          </div>
+                          <div className="customer-card-row">
+                            <span className="customer-card-label">Agent</span>
+                            <span className="customer-card-value">
+                              <div className="agent-tag">
+                                <span className="material-symbols-outlined agent-tag-icon">badge</span>
+                                <span>{customer.agentName}</span>
+                              </div>
+                            </span>
+                          </div>
+                          <div className="customer-card-row">
+                            <span className="customer-card-label">Date Added</span>
+                            <span className="customer-card-value">{formatDate(customer['Created at'] || '')}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </>
             )}

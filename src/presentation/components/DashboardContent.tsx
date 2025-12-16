@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../infrastructure/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import bannerImage from '../../assets/banner.png';
 import './DashboardContent.css';
 
@@ -53,20 +53,23 @@ export const DashboardContent = () => {
       try {
         setLoading(true);
 
-        // Fetch total customers
+        // Fetch total customers (RLS allows authenticated users to read)
         const { count: customersCount } = await supabase
           .from('Customer_Data')
           .select('*', { count: 'exact', head: true });
         
         setTotalCustomers(customersCount || 0);
 
-        // Fetch all customers with dates and agent IDs for calculations
+        // Fetch all customers with dates and agent IDs for calculations (RLS allows authenticated users to read)
         const { data: customersWithDates, error: customersDatesError } = await supabase
           .from('Customer_Data')
           .select('*');
 
         if (customersDatesError) {
           console.error('Error fetching customers with dates:', customersDatesError);
+          if (customersDatesError.message.includes('permission') || customersDatesError.message.includes('policy')) {
+            console.error('Permission denied. RLS policy may need adjustment.');
+          }
         } else {
           console.log('Sample customer record (to check available fields):', customersWithDates?.[0]);
         }
@@ -182,20 +185,29 @@ export const DashboardContent = () => {
           setMonthlyCustomerData([0, 0, 0, 0]);
         }
 
-        // Fetch all agents
+        // Fetch all agents (RLS allows authenticated users to read)
         const { data: agents, error: agentsError } = await supabase
           .from('Agent')
           .select('"Agent ID", "Full Name"');
 
-        if (agentsError) throw agentsError;
+        if (agentsError) {
+          console.error('Error fetching agents:', agentsError);
+          if (agentsError.message.includes('permission') || agentsError.message.includes('policy')) {
+            console.error('Permission denied. RLS policy may need adjustment.');
+          }
+          throw agentsError;
+        }
 
-        // Fetch all customers with their agent IDs (if not already fetched above)
+        // Fetch all customers with their agent IDs (RLS allows authenticated users to read)
         const { data: customers, error: customersError } = await supabase
           .from('Customer_Data')
           .select('"Agent ID"');
 
         if (customersError) {
           console.error('Error fetching customers:', customersError);
+          if (customersError.message.includes('permission') || customersError.message.includes('policy')) {
+            console.error('Permission denied. RLS policy may need adjustment.');
+          }
           throw customersError;
         }
 

@@ -6,7 +6,7 @@ interface DashboardSidebarProps {
   onToggle?: () => void;
 }
 
-export const DashboardSidebar = ({ isOpen }: DashboardSidebarProps) => {
+export const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) => {
   const location = useLocation();
 
   const menuItems = [
@@ -27,6 +27,13 @@ export const DashboardSidebar = ({ isOpen }: DashboardSidebarProps) => {
     },
   ];
 
+  const handleLinkClick = () => {
+    // Close sidebar on mobile when a link is clicked
+    if (window.innerWidth <= 768 && onToggle) {
+      onToggle();
+    }
+  };
+
   return (
     <aside className={`dashboard-sidebar ${isOpen ? 'open' : 'closed'}`}>
       <nav className="sidebar-nav">
@@ -38,6 +45,7 @@ export const DashboardSidebar = ({ isOpen }: DashboardSidebarProps) => {
                 <Link
                   to={item.path}
                   className={`nav-item ${isActive ? 'active' : ''}`}
+                  onClick={handleLinkClick}
                 >
                   <span className="material-symbols-outlined nav-icon">{item.icon}</span>
                   <span className="nav-label">{item.label}</span>

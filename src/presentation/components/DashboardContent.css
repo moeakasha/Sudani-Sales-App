@@ -382,13 +382,42 @@
   background-color: #f9fafb;
 }
 
+@media (max-width: 1024px) {
+  .kpi-charts {
+    grid-template-columns: 1fr;
+  }
+
+  .bar-chart {
+    gap: 1rem;
+  }
+}
+
 @media (max-width: 768px) {
   .dashboard-content {
-    padding: 1.5rem 1rem;
+    padding: 1rem;
+  }
+
+  .welcome-section {
+    margin-bottom: 1rem;
+    padding-top: 0.5rem;
   }
 
   .welcome-title {
     font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .account-info {
+    gap: 0.125rem;
+  }
+
+  .account-name,
+  .account-number {
+    font-size: 0.8125rem;
+  }
+
+  .banner-section {
+    margin-bottom: 1.5rem;
   }
 
   .banner-image {
@@ -398,16 +427,127 @@
   .kpi-summary,
   .kpi-charts {
     grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .kpi-card-simple {
+    padding: 1.5rem;
+    gap: 1rem;
+  }
+
+  .kpi-icon-simple {
+    width: 48px;
+    height: 48px;
+  }
+
+  .kpi-icon-simple .material-symbols-outlined {
+    font-size: 24px;
+  }
+
+  .kpi-data-placeholder {
+    font-size: 2rem;
+  }
+
+  .kpi-chart-card {
+    padding: 1.5rem;
+    gap: 1rem;
+  }
+
+  .chart-visualization {
+    padding: 1.5rem 0;
+    min-height: 150px;
+  }
+
+  .bar-chart {
+    gap: 0.75rem;
+  }
+
+  .bar-wrapper {
+    min-height: 120px;
+  }
+
+  .bar {
+    max-width: 50px;
+  }
+
+  .bar-label {
+    font-size: 0.7rem;
   }
 
   .users-table {
     font-size: 0.875rem;
   }
 
-  .user-avatar-cell,
+  .user-avatar-cell {
+    width: 50px;
+    padding: 0.75rem 0.5rem;
+  }
+
+  .user-avatar-circle {
+    width: 36px;
+    height: 36px;
+    font-size: 0.8rem;
+  }
+
   .user-info-cell,
   .user-role-cell,
   .user-dates-cell {
     padding: 0.75rem 0.5rem;
+  }
+
+  .user-name-text {
+    font-size: 0.875rem;
+  }
+
+  .user-role-cell {
+    display: none;
+  }
+
+  .user-dates-cell {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-content {
+    padding: 0.75rem;
+  }
+
+  .welcome-title {
+    font-size: 1.25rem;
+  }
+
+  .account-name,
+  .account-number {
+    font-size: 0.75rem;
+  }
+
+  .kpi-card-simple {
+    padding: 1.25rem;
+  }
+
+  .kpi-data-placeholder {
+    font-size: 1.75rem;
+  }
+
+  .kpi-chart-card {
+    padding: 1.25rem;
+  }
+
+  .chart-kpi-name {
+    font-size: 0.9375rem;
+  }
+
+  .bar-chart {
+    gap: 0.5rem;
+    padding: 0 0.25rem;
+  }
+
+  .bar-count-top {
+    font-size: 0.75rem;
+  }
+
+  .bar-label {
+    font-size: 0.65rem;
   }
 }

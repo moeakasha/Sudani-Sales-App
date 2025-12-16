@@ -28,3 +28,38 @@ body {
   height: 100vh;
   overflow: hidden;
 }
+
+/* Global Mobile Styles */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth scrolling for all elements */
+@media (prefers-reduced-motion: no-preference) {
+  * {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Ensure text remains readable on mobile */
+@media (max-width: 768px) {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+  }
+  
+  body {
+    min-width: 320px;
+  }
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -70,16 +70,61 @@
   white-space: nowrap;
 }
 
+/* Mobile Overlay Backdrop */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @media (max-width: 768px) {
   .dashboard-sidebar {
     transform: translateX(-100%);
     top: 0;
     height: 100vh;
+    z-index: 1001;
   }
 
   .dashboard-sidebar.open {
     transform: translateX(0);
+    width: 280px;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
+  }
+
+  .sidebar-backdrop.visible {
+    display: block;
+  }
+
+  .nav-item {
+    padding: 1rem 1.25rem;
+  }
+
+  .nav-icon {
+    font-size: 22px;
+  }
+
+  .nav-label {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-sidebar.open {
     width: 260px;
-    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.5);
   }
 }
