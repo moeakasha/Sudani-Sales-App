@@ -140,3 +140,4 @@ Your Sudani Sales App is now properly secured with RLS policies that allow any a
 *Project: Sudani Sales App*  
 *Supabase Project ID: fujlictajoatyidwcmnb*
 
+
