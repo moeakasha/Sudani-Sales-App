@@ -5,11 +5,36 @@
   right: 0;
   width: 100%;
   z-index: 1;
+  background: transparent;
+  pointer-events: none;
 }
 
-.footer-image {
+.footer-animation-container {
   width: 100%;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.footer-animation {
+  width: 100%;
+  max-width: 100%;
   height: auto;
-  display: block;
+  opacity: 0.9;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .footer-animation-container {
+    height: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-animation-container {
+    height: 60px;
+  }
 }
 
