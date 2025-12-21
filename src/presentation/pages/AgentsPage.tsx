@@ -74,26 +74,24 @@ export const AgentsPage = () => {
         throw agentsError;
       }
 
-      // Fetch customer counts for each agent (RLS allows authenticated users to read)
-      const { data: customers, error: customersError } = await supabase
-        .from('Customer_Data')
-        .select('"Agent ID"');
+      // Get accurate customer counts per agent using database function (no 1000 limit)
+      const { data: agentCountsData, error: countsError } = await supabase
+        .rpc('get_agent_customer_counts');
 
-      if (customersError) {
-        console.error('Error fetching customers:', customersError);
-        throw customersError;
+      if (countsError) {
+        console.error('Error fetching agent customer counts:', countsError);
+        throw countsError;
       }
 
-      // Count customers per agent
+      // Create a map for easy lookup
       const agentCustomerCounts = new Map<number, number>();
-      if (customers) {
-        customers.forEach(customer => {
-          const agentId = customer['Agent ID'];
-          if (agentId != null) {
-            agentCustomerCounts.set(agentId, (agentCustomerCounts.get(agentId) || 0) + 1);
-          }
+      if (agentCountsData) {
+        agentCountsData.forEach(row => {
+          agentCustomerCounts.set(row.agent_id, Number(row.customer_count));
         });
       }
+
+      console.log('Agent customer counts loaded:', agentCustomerCounts.size, 'agents with customers');
 
       // Merge agent data with customer counts
       const agentsWithCounts: Agent[] = (agentsData || []).map(agent => ({

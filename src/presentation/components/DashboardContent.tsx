@@ -53,178 +53,116 @@ export const DashboardContent = () => {
       try {
         setLoading(true);
 
-        // Fetch total customers (RLS allows authenticated users to read)
-        const { count: customersCount } = await supabase
-          .from('Customer_Data')
-          .select('*', { count: 'exact', head: true });
-        
-        setTotalCustomers(customersCount || 0);
+        // Fetch dashboard metrics using database function (accurate for all data, no 1000 limit)
+        const { data: metricsData, error: metricsError } = await supabase
+          .rpc('get_dashboard_metrics');
 
-        // Fetch all customers with dates and agent IDs for calculations (RLS allows authenticated users to read)
-        const { data: customersWithDates, error: customersDatesError } = await supabase
-          .from('Customer_Data')
-          .select('*');
-
-        if (customersDatesError) {
-          console.error('Error fetching customers with dates:', customersDatesError);
-          if (customersDatesError.message.includes('permission') || customersDatesError.message.includes('policy')) {
-            console.error('Permission denied. RLS policy may need adjustment.');
-          }
-        } else {
-          console.log('Sample customer record (to check available fields):', customersWithDates?.[0]);
+        if (metricsError) {
+          console.error('Error fetching dashboard metrics:', metricsError);
+          throw metricsError;
         }
 
-        // Calculate average customers per day and time-based metrics
-        if (customersWithDates && customersWithDates.length > 0) {
-          // Process customers with their dates
-          const customersWithValidDates = customersWithDates
-            .map(c => {
-              // Try multiple possible date field names
-              const dateValue = (c as any)['Created at'] || 
-                               (c as any).created_at || 
-                               (c as any)['Created At'] || 
-                               (c as any)['Date'] || 
-                               (c as any).date;
-              
-              if (dateValue) {
-                const date = new Date(dateValue);
-                if (!isNaN(date.getTime())) {
-                  return {
-                    date: date,
-                    agentId: c['Agent ID']
-                  };
-                }
-              }
-              return null;
-            })
-            .filter((item): item is { date: Date; agentId: number } => item !== null);
+        if (metricsData) {
+          setTotalCustomers(metricsData.total_customers || 0);
+          setActiveAgents(metricsData.active_agents || 0);
+          setAverageCustomersPerDay(metricsData.avg_customers_per_day || 0);
+          console.log('Dashboard metrics loaded:', metricsData);
+        }
 
-          if (customersWithValidDates.length > 0) {
-            const dates = customersWithValidDates.map(c => c.date).sort((a, b) => a.getTime() - b.getTime());
-            const firstDate = dates[0];
-            const lastDate = dates[dates.length - 1];
-            const daysDiff = Math.max(1, Math.ceil((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24)));
-            const avgPerDay = customersWithValidDates.length / daysDiff;
-            setAverageCustomersPerDay(parseFloat(avgPerDay.toFixed(2)));
-            
-            console.log('Average customers per day calculated:', avgPerDay, 'from', customersWithValidDates.length, 'customers over', daysDiff, 'days');
+        // Fetch daily customer counts for charts (last 120 days to cover 4 months)
+        const { data: dailyCountsData, error: dailyCountsError } = await supabase
+          .rpc('get_daily_customer_counts', { days_back: 120 });
 
-            // Calculate weekly data (last 7 days) - count customers added each day
-            const now = new Date();
-            const weeklyData: number[] = [];
+        if (dailyCountsError) {
+          console.error('Error fetching daily counts:', dailyCountsError);
+        }
+
+        // Calculate weekly and monthly data from daily counts
+        if (dailyCountsData && dailyCountsData.length > 0) {
+          const now = new Date();
+          
+          // Create a map for easy lookup
+          const dailyCountMap = new Map<string, number>();
+          dailyCountsData.forEach(row => {
+            dailyCountMap.set(row.date, Number(row.customer_count));
+          });
+
+          console.log('=== Weekly Data Calculation (DB Function) ===');
+          console.log('Daily counts received:', dailyCountsData.length, 'days');
+          
+          // Calculate weekly data (last 7 days)
+          const weeklyData: number[] = [];
+          for (let i = 6; i >= 0; i--) {
+            const targetDate = new Date(now);
+            targetDate.setDate(targetDate.getDate() - i);
+            const targetDateStr = targetDate.toISOString().split('T')[0]; // YYYY-MM-DD
             
-            console.log('=== Weekly Data Calculation Debug ===');
-            console.log('Current time:', now);
-            console.log('Total customers with valid dates:', customersWithValidDates.length);
-            console.log('Sample customer dates:', customersWithValidDates.slice(0, 5).map(c => c.date));
+            const dayCount = dailyCountMap.get(targetDateStr) || 0;
+            weeklyData.push(dayCount);
             
-            for (let i = 6; i >= 0; i--) {
-              const targetDate = new Date(now);
-              targetDate.setDate(targetDate.getDate() - i);
-              
-              // Get the date string in local timezone (YYYY-MM-DD format)
-              const targetDateStr = targetDate.toLocaleDateString('en-CA'); // en-CA gives YYYY-MM-DD format
-              
-              const matchingCustomers = customersWithValidDates.filter(c => {
-                // Convert customer date to local date string for comparison
-                const customerDateStr = c.date.toLocaleDateString('en-CA');
-                return customerDateStr === targetDateStr;
-              });
-              
-              const dayCount = matchingCustomers.length;
-              weeklyData.push(dayCount);
-              
-              if (i === 0) { // Today
-                console.log('TODAY (i=0):');
-                console.log('  Target date:', targetDateStr);
-                console.log('  Matching customers:', dayCount);
-                if (dayCount > 0) {
-                  console.log('  Sample matching customer dates:', matchingCustomers.slice(0, 5).map(c => ({
-                    utc: c.date.toISOString(),
-                    local: c.date.toLocaleString(),
-                    dateStr: c.date.toLocaleDateString('en-CA')
-                  })));
-                }
-              }
+            if (i === 0) { // Today
+              console.log('TODAY:', targetDateStr, '- Count:', dayCount);
             }
-            setWeeklyCustomerData(weeklyData.length > 0 ? weeklyData : [0, 0, 0, 0, 0, 0, 0]);
-            console.log('Weekly customer data:', weeklyData);
-            console.log('=== End Weekly Data Debug ===');
-
-            // Calculate monthly data (last 4 months) - count customers added each month
-            const monthlyData: number[] = [];
-            for (let i = 3; i >= 0; i--) {
-              const targetYear = now.getFullYear();
-              const targetMonth = now.getMonth() - i;
-              
-              const monthCount = customersWithValidDates.filter(c => {
-                // Get the year and month of the customer date in local timezone
-                const customerYear = c.date.getFullYear();
-                const customerMonth = c.date.getMonth();
-                
-                // Compare year and month
-                const compareDate = new Date(targetYear, targetMonth, 1);
-                return customerYear === compareDate.getFullYear() && 
-                       customerMonth === compareDate.getMonth();
-              }).length;
-              
-              monthlyData.push(monthCount);
-            }
-            setMonthlyCustomerData(monthlyData.length > 0 ? monthlyData : [0, 0, 0, 0]);
-            console.log('Monthly customer data:', monthlyData);
-          } else {
-            // No valid dates found, use total customers as fallback
-            const avgPerDay = customersWithDates.length / 30; // Assume 30 days if no dates
-            setAverageCustomersPerDay(parseFloat(avgPerDay.toFixed(2)));
-            setWeeklyCustomerData([0, 0, 0, 0, 0, 0, 0]);
-            setMonthlyCustomerData([0, 0, 0, 0]);
           }
+          setWeeklyCustomerData(weeklyData);
+          console.log('Weekly customer data:', weeklyData);
+          console.log('=== End Weekly Data Debug ===');
+
+          // Calculate monthly data (last 4 months)
+          const monthlyData: number[] = [];
+          for (let i = 3; i >= 0; i--) {
+            const targetYear = now.getFullYear();
+            const targetMonth = now.getMonth() - i;
+            const compareDate = new Date(targetYear, targetMonth, 1);
+            const targetYearFinal = compareDate.getFullYear();
+            const targetMonthFinal = compareDate.getMonth();
+            
+            // Sum all days in this month
+            const monthCount = dailyCountsData
+              .filter(row => {
+                const rowDate = new Date(row.date);
+                return rowDate.getFullYear() === targetYearFinal && 
+                       rowDate.getMonth() === targetMonthFinal;
+              })
+              .reduce((sum, row) => sum + Number(row.customer_count), 0);
+            
+            monthlyData.push(monthCount);
+          }
+          setMonthlyCustomerData(monthlyData);
+          console.log('Monthly customer data:', monthlyData);
         } else {
-          setAverageCustomersPerDay(0);
           setWeeklyCustomerData([0, 0, 0, 0, 0, 0, 0]);
           setMonthlyCustomerData([0, 0, 0, 0]);
         }
 
-        // Fetch all agents (RLS allows authenticated users to read)
+        // Fetch all agents
         const { data: agents, error: agentsError } = await supabase
           .from('Agent')
           .select('"Agent ID", "Full Name"');
 
         if (agentsError) {
           console.error('Error fetching agents:', agentsError);
-          if (agentsError.message.includes('permission') || agentsError.message.includes('policy')) {
-            console.error('Permission denied. RLS policy may need adjustment.');
-          }
           throw agentsError;
         }
 
-        // Fetch all customers with their agent IDs (RLS allows authenticated users to read)
-        const { data: customers, error: customersError } = await supabase
-          .from('Customer_Data')
-          .select('"Agent ID"');
+        // Get accurate customer counts per agent using database function (no 1000 limit)
+        const { data: agentCountsData, error: countsError } = await supabase
+          .rpc('get_agent_customer_counts');
 
-        if (customersError) {
-          console.error('Error fetching customers:', customersError);
-          if (customersError.message.includes('permission') || customersError.message.includes('policy')) {
-            console.error('Permission denied. RLS policy may need adjustment.');
-          }
-          throw customersError;
+        if (countsError) {
+          console.error('Error fetching agent customer counts:', countsError);
+          throw countsError;
         }
 
-        // Count customers per agent
+        // Create a map for easy lookup
         const agentCustomerCounts = new Map<number, number>();
-        if (customers) {
-          customers.forEach(customer => {
-            const agentId = customer['Agent ID'];
-            if (agentId != null) {
-              agentCustomerCounts.set(agentId, (agentCustomerCounts.get(agentId) || 0) + 1);
-            }
+        if (agentCountsData) {
+          agentCountsData.forEach(row => {
+            agentCustomerCounts.set(row.agent_id, Number(row.customer_count));
           });
         }
 
-        // Calculate active agents (agents with at least one customer)
-        const activeCount = Array.from(agentCustomerCounts.keys()).length;
-        setActiveAgents(activeCount);
+        console.log('Agent customer counts loaded:', agentCustomerCounts.size, 'agents with customers');
 
         // Prepare agent data with customer counts
         const agentsWithCounts: Agent[] = (agents || []).map(agent => ({
