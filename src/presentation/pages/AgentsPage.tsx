@@ -5,16 +5,17 @@ import { DashboardSidebar } from '../components/DashboardSidebar';
 import './AgentsPage.css';
 
 interface Agent {
-  'Agent ID': number;
+  'Username': string;
   'Full Name': string;
-  'Location': string;
-  'Date': string;
-  'Phone Number': string;
+  'Agent ID': string | null;
+  'Center Name'?: string;
+  'Region'?: string;
+  'Mobile'?: string;
   'created_at'?: string;
   customerCount?: number;
 }
 
-type SortField = 'Full Name' | 'Agent ID' | 'created_at' | 'customerCount';
+type SortField = 'Full Name' | 'Username' | 'Agent ID' | 'created_at' | 'customerCount';
 type SortOrder = 'asc' | 'desc';
 
 export const AgentsPage = () => {
@@ -22,9 +23,13 @@ export const AgentsPage = () => {
   const [filteredAgents, setFilteredAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState<SortField>('Agent ID');
+  const [sortField, setSortField] = useState<SortField>('Full Name');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalAgents, setTotalAgents] = useState(0);
+  const [activeAgents, setActiveAgents] = useState(0);
+  const [pageSize] = useState(100);
   // Start with sidebar open on desktop, closed on mobile
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   
@@ -35,13 +40,8 @@ export const AgentsPage = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    // Fetch agents data (auth already checked by ProtectedRoute)
     fetchAgents();
-  }, []);
-
-  useEffect(() => {
-    applyFilters();
-  }, [agents, searchQuery, sortField, sortOrder, statusFilter]);
+  }, [searchQuery, sortField, sortOrder, statusFilter, currentPage]);
 
   // Handle window resize
   useEffect(() => {
@@ -61,94 +61,47 @@ export const AgentsPage = () => {
     try {
       setLoading(true);
 
-      // Fetch all agents (RLS allows authenticated users to read)
-      const { data: agentsData, error: agentsError } = await supabase
-        .from('Agent')
-        .select('*');
+      // Fetch agents using the paginated RPC function
+      const { data, error } = await supabase.rpc('get_agents_paginated', {
+        p_search: searchQuery,
+        p_status: statusFilter,
+        p_sort_field: sortField,
+        p_sort_order: sortOrder,
+        p_page_size: pageSize,
+        p_page_num: currentPage
+      });
 
-      if (agentsError) {
-        console.error('Error fetching agents:', agentsError);
-        if (agentsError.message.includes('permission') || agentsError.message.includes('policy')) {
-          alert('Permission denied. Please contact your administrator.');
-        }
-        throw agentsError;
+      if (error) {
+        console.error('Error fetching agents:', error);
+        throw error;
       }
 
-      // Get accurate customer counts per agent using database function (no 1000 limit)
-      const { data: agentCountsData, error: countsError } = await supabase
-        .rpc('get_agent_customer_counts');
-
-      if (countsError) {
-        console.error('Error fetching agent customer counts:', countsError);
-        throw countsError;
-      }
-
-      // Create a map for easy lookup
-      const agentCustomerCounts = new Map<number, number>();
-      if (agentCountsData) {
-        agentCountsData.forEach(row => {
-          agentCustomerCounts.set(row.agent_id, Number(row.customer_count));
-        });
-      }
-
-      console.log('Agent customer counts loaded:', agentCustomerCounts.size, 'agents with customers');
-
-      // Merge agent data with customer counts
-      const agentsWithCounts: Agent[] = (agentsData || []).map(agent => ({
-        ...agent,
-        customerCount: agentCustomerCounts.get(agent['Agent ID']) || 0,
+      const formattedData: Agent[] = (data || []).map((row: any) => ({
+        Username: row.Username,
+        'Full Name': row['Full Name'],
+        'Agent ID': row['Agent ID'],
+        'Center Name': row['Center Name'],
+        'Region': row['Region'],
+        'Mobile': row['Mobile'],
+        created_at: row.created_at,
+        customerCount: Number(row.customer_count)
       }));
 
-      setAgents(agentsWithCounts);
+      setAgents(formattedData);
+      setFilteredAgents(formattedData);
+      setTotalAgents(data?.[0]?.total_count || 0);
+
+      // Fetch summary stats using RPC
+      const { data: stats, error: statsError } = await supabase.rpc('get_dashboard_metrics');
+      if (!statsError && stats) {
+        setActiveAgents(stats.active_agents || 0);
+      }
 
     } catch (error) {
       console.error('Error fetching agents:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const applyFilters = () => {
-    let filtered = [...agents];
-
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(agent =>
-        agent['Full Name']?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        agent['Agent ID']?.toString().includes(searchQuery)
-      );
-    }
-
-    // Status filter (active/inactive)
-    if (statusFilter === 'active') {
-      filtered = filtered.filter(agent => (agent.customerCount || 0) > 0);
-    } else if (statusFilter === 'inactive') {
-      filtered = filtered.filter(agent => (agent.customerCount || 0) === 0);
-    }
-
-    // Sorting
-    filtered.sort((a, b) => {
-      let aValue: any = a[sortField];
-      let bValue: any = b[sortField];
-
-      // Handle undefined values
-      if (aValue === undefined) aValue = '';
-      if (bValue === undefined) bValue = '';
-
-      // Convert to comparable values
-      if (typeof aValue === 'string') {
-        aValue = aValue.toLowerCase();
-        bValue = bValue.toLowerCase();
-      }
-
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
-      } else {
-        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
-      }
-    });
-
-    setFilteredAgents(filtered);
   };
 
   const handleSort = (field: SortField) => {
@@ -158,6 +111,7 @@ export const AgentsPage = () => {
       setSortField(field);
       setSortOrder('asc');
     }
+    setCurrentPage(1); // Reset to first page on sort
   };
 
   const getInitials = (name: string) => {
@@ -186,14 +140,16 @@ export const AgentsPage = () => {
 
   const exportToCSV = () => {
     // Prepare CSV headers
-    const headers = ['Agent ID', 'Full Name', 'Location', 'Phone Number', 'Join Date', 'Customers', 'Status'];
+    const headers = ['Username', 'Full Name', 'Region', 'Center Name', 'Mobile', 'Telegram ID', 'Join Date', 'Customers', 'Status'];
     
     // Prepare CSV rows
     const rows = filteredAgents.map(agent => [
-      agent['Agent ID'],
+      agent['Username'],
       agent['Full Name'],
-      agent['Location'] || 'N/A',
-      agent['Phone Number'] || 'N/A',
+      agent['Region'] || 'N/A',
+      agent['Center Name'] || 'N/A',
+      agent['Mobile'] || 'N/A',
+      agent['Agent ID'] || 'Not Linked',
       formatDate(agent.created_at || ''),
       agent.customerCount || 0,
       (agent.customerCount || 0) > 0 ? 'Active' : 'Inactive'
@@ -242,9 +198,9 @@ export const AgentsPage = () => {
 
       // Update agent (RLS allows authenticated users to write)
       const { error } = await supabase
-        .from('Agent')
+        .from('agentsdata')
         .update({ 'Full Name': editedName.trim() })
-        .eq('Agent ID', selectedAgent['Agent ID']);
+        .eq('Username', selectedAgent['Username']);
 
       if (error) {
         console.error('Error updating agent:', error);
@@ -258,7 +214,7 @@ export const AgentsPage = () => {
 
       // Update local state
       const updatedAgents = agents.map(agent =>
-        agent['Agent ID'] === selectedAgent['Agent ID']
+        agent['Username'] === selectedAgent['Username']
           ? { ...agent, 'Full Name': editedName.trim() }
           : agent
       );
@@ -297,11 +253,11 @@ export const AgentsPage = () => {
               </div>
               <div className="page-stats">
                 <div className="stat-badge">
-                  <span className="stat-value">{agents.length}</span>
+                  <span className="stat-value">{totalAgents}</span>
                   <span className="stat-label">Total Agents</span>
                 </div>
                 <div className="stat-badge">
-                  <span className="stat-value">{agents.filter(a => (a.customerCount || 0) > 0).length}</span>
+                  <span className="stat-value">{activeAgents}</span>
                   <span className="stat-label">Active</span>
                 </div>
               </div>
@@ -314,7 +270,10 @@ export const AgentsPage = () => {
                   type="text"
                   placeholder="Search by name or ID..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1); // Reset to first page on search
+                  }}
                   className="search-input"
                 />
                 {searchQuery && (
@@ -327,7 +286,10 @@ export const AgentsPage = () => {
               <div className="filter-controls">
                 <select
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setCurrentPage(1); // Reset to first page on filter
+                  }}
                   className="filter-select"
                 >
                   <option value="all">All Status</option>
@@ -354,7 +316,7 @@ export const AgentsPage = () => {
             ) : (
               <>
                 <div className="results-info">
-                  <p>Showing {filteredAgents.length} of {agents.length} agents</p>
+                  <p>Showing {filteredAgents.length} of {totalAgents} agents</p>
                 </div>
 
                 <div className="table-container">
@@ -362,6 +324,15 @@ export const AgentsPage = () => {
                     <thead>
                       <tr>
                         <th>Agent</th>
+                        <th className="sortable" onClick={() => handleSort('Username')}>
+                          <div className="th-content">
+                            <span>Username</span>
+                            <span className="material-symbols-outlined sort-icon">
+                              {getSortIcon('Username')}
+                            </span>
+                          </div>
+                        </th>
+                        <th>Region</th>
                         <th className="sortable" onClick={() => handleSort('Agent ID')}>
                           <div className="th-content">
                             <span>Telegram ID</span>
@@ -401,7 +372,7 @@ export const AgentsPage = () => {
                         </tr>
                       ) : (
                         filteredAgents.map((agent) => (
-                          <tr key={agent['Agent ID']} className="data-row">
+                          <tr key={agent['Username']} className="data-row">
                             <td>
                               <div className="agent-cell">
                                 <div className="agent-avatar">
@@ -409,11 +380,18 @@ export const AgentsPage = () => {
                                 </div>
                                 <div className="agent-info">
                                   <div className="agent-name">{agent['Full Name']}</div>
+                                  <div className="agent-center">{agent['Center Name']}</div>
                                 </div>
                               </div>
                             </td>
                             <td>
-                              <span className="agent-id">{agent['Agent ID']}</span>
+                              <span className="username-cell">{agent['Username']}</span>
+                            </td>
+                            <td>
+                              <span className="region-badge">{agent['Region'] || 'N/A'}</span>
+                            </td>
+                            <td>
+                              <span className="agent-id">{agent['Agent ID'] || 'Not Linked'}</span>
                             </td>
                             <td>{formatDate(agent.created_at || '')}</td>
                             <td>
@@ -440,6 +418,32 @@ export const AgentsPage = () => {
                   </table>
                 </div>
 
+                {/* Pagination Controls */}
+                {totalAgents > pageSize && (
+                  <div className="pagination-controls">
+                    <button 
+                      className="pagination-button" 
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(prev => prev - 1)}
+                    >
+                      <span className="material-symbols-outlined">chevron_left</span>
+                      <span>Previous</span>
+                    </button>
+                    <div className="pagination-info">
+                      Page <span>{currentPage}</span>
+                      <span className="pagination-total">of {Math.ceil(totalAgents / pageSize)}</span>
+                    </div>
+                    <button 
+                      className="pagination-button" 
+                      disabled={currentPage >= Math.ceil(totalAgents / pageSize)}
+                      onClick={() => setCurrentPage(prev => prev + 1)}
+                    >
+                      <span>Next</span>
+                      <span className="material-symbols-outlined">chevron_right</span>
+                    </button>
+                  </div>
+                )}
+
                 {/* Mobile Card View */}
                 <div className="mobile-card-list">
                   {filteredAgents.length === 0 ? (
@@ -450,19 +454,28 @@ export const AgentsPage = () => {
                     </div>
                   ) : (
                     filteredAgents.map((agent) => (
-                      <div key={agent['Agent ID']} className="agent-card">
+                      <div key={agent['Username']} className="agent-card">
                         <div className="agent-card-header">
                           <div className="agent-avatar">
                             {getInitials(agent['Full Name'])}
                           </div>
                           <div className="agent-info">
                             <div className="agent-name">{agent['Full Name']}</div>
+                            <div className="agent-username">@{agent['Username']}</div>
                           </div>
                         </div>
                         <div className="agent-card-body">
                           <div className="agent-card-row">
+                            <span className="agent-card-label">Region</span>
+                            <span className="agent-card-value">{agent['Region'] || 'N/A'}</span>
+                          </div>
+                          <div className="agent-card-row">
+                            <span className="agent-card-label">Center</span>
+                            <span className="agent-card-value">{agent['Center Name'] || 'N/A'}</span>
+                          </div>
+                          <div className="agent-card-row">
                             <span className="agent-card-label">Telegram ID</span>
-                            <span className="agent-card-value">{agent['Agent ID']}</span>
+                            <span className="agent-card-value">{agent['Agent ID'] || 'Not Linked'}</span>
                           </div>
                           <div className="agent-card-row">
                             <span className="agent-card-label">Join Date</span>
@@ -493,6 +506,32 @@ export const AgentsPage = () => {
                     ))
                   )}
                 </div>
+                
+                {/* Pagination Controls for Mobile */}
+                {totalAgents > pageSize && (
+                  <div className="pagination-controls mobile-pagination-only">
+                    <button 
+                      className="pagination-button" 
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(prev => prev - 1)}
+                    >
+                      <span className="material-symbols-outlined">chevron_left</span>
+                      <span>Previous</span>
+                    </button>
+                    <div className="pagination-info">
+                      Page <span>{currentPage}</span>
+                      <span className="pagination-total">of {Math.ceil(totalAgents / pageSize)}</span>
+                    </div>
+                    <button 
+                      className="pagination-button" 
+                      disabled={currentPage >= Math.ceil(totalAgents / pageSize)}
+                      onClick={() => setCurrentPage(prev => prev + 1)}
+                    >
+                      <span>Next</span>
+                      <span className="material-symbols-outlined">chevron_right</span>
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </main>
@@ -526,8 +565,12 @@ export const AgentsPage = () => {
               
               <div className="agent-details">
                 <div className="detail-item">
-                  <span className="detail-label">Agent ID:</span>
-                  <span className="detail-value">{selectedAgent?.['Agent ID']}</span>
+                  <span className="detail-label">Username:</span>
+                  <span className="detail-value">{selectedAgent?.['Username']}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Region:</span>
+                  <span className="detail-value">{selectedAgent?.['Region']}</span>
                 </div>
               </div>
             </div>

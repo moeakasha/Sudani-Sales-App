@@ -5,8 +5,11 @@ import bannerImage from '../../assets/banner.png';
 import './DashboardContent.css';
 
 interface Agent {
-  'Agent ID': number;
+  'Username': string;
+  'Agent ID': string | null;
   'Full Name': string;
+  'Center Name'?: string;
+  'Region'?: string;
   customerCount: number;
 }
 
@@ -137,8 +140,8 @@ export const DashboardContent = () => {
 
         // Fetch all agents
         const { data: agents, error: agentsError } = await supabase
-          .from('Agent')
-          .select('"Agent ID", "Full Name"');
+          .from('agentsdata')
+          .select('"Agent ID", "Full Name", "Username", "Center Name", "Region"');
 
         if (agentsError) {
           console.error('Error fetching agents:', agentsError);
@@ -155,10 +158,10 @@ export const DashboardContent = () => {
         }
 
         // Create a map for easy lookup
-        const agentCustomerCounts = new Map<number, number>();
+        const agentCustomerCounts = new Map<string, number>();
         if (agentCountsData) {
           agentCountsData.forEach(row => {
-            agentCustomerCounts.set(row.agent_id, Number(row.customer_count));
+            agentCustomerCounts.set(row['Agent ID'], Number(row.customer_count));
           });
         }
 
@@ -168,7 +171,10 @@ export const DashboardContent = () => {
         const agentsWithCounts: Agent[] = (agents || []).map(agent => ({
           'Agent ID': agent['Agent ID'],
           'Full Name': agent['Full Name'],
-          customerCount: agentCustomerCounts.get(agent['Agent ID']) || 0,
+          'Username': agent['Username'],
+          'Center Name': agent['Center Name'],
+          'Region': agent['Region'],
+          customerCount: agentCustomerCounts.get(agent['Username']) || 0,
         }));
 
         // Store all agents for "See All" functionality
@@ -405,8 +411,8 @@ export const DashboardContent = () => {
                         </div>
                       </td>
                       <td className="user-info-cell">
-                        <div className="user-name-text">{agent['Full Name']}</div>
-                        <div className="user-id-text">ID: {agent['Agent ID']}</div>
+                        <div className="user-name-text">@{agent['Username']}</div>
+                        <div className="user-id-text">{agent['Full Name']} | {agent['Region'] || 'N/A'}</div>
                       </td>
                       <td className="user-role-cell">
                         <span className="role-tag">sales</span>

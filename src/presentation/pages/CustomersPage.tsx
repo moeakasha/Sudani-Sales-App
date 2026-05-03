@@ -8,7 +8,7 @@ interface Customer {
   'id': number;
   'Customer_Name': string;
   'Customer_Mobile': string;
-  'Agent ID': number;
+  'Agent ID': string; // Changed to string (Username)
   'Created at'?: string;
   agentName?: string;
 }
@@ -30,7 +30,7 @@ export const CustomersPage = () => {
   const [pageSize] = useState(100); // 100 customers per page
   const [totalCount, setTotalCount] = useState(0);
 
-  const [agents, setAgents] = useState<{ id: number; name: string }[]>([]);
+  const [agents, setAgents] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     // Fetch customers data (auth already checked by ProtectedRoute)
@@ -123,23 +123,23 @@ export const CustomersPage = () => {
 
       // Fetch all agents to map agent names (RLS allows authenticated users to read)
       const { data: agentsData, error: agentsError } = await supabase
-        .from('Agent')
-        .select('"Agent ID", "Full Name"');
+        .from('agentsdata')
+        .select('"Username", "Full Name"');
 
       if (agentsError) {
         console.error('Error fetching agents:', agentsError);
         throw agentsError;
       }
 
-      // Create agent ID to name map
-      const agentMap = new Map<number, string>();
+      // Create agent ID (Username) to name map
+      const agentMap = new Map<string, string>();
       if (agentsData) {
         agentsData.forEach(agent => {
-          agentMap.set(agent['Agent ID'], agent['Full Name']);
+          agentMap.set(agent['Username'], agent['Full Name']);
         });
         
         // Set agents for filter dropdown
-        setAgents(agentsData.map(a => ({ id: a['Agent ID'], name: a['Full Name'] })));
+        setAgents(agentsData.map(a => ({ id: a['Username'], name: a['Full Name'] })));
       }
 
       // Merge customer data with agent names
@@ -149,7 +149,7 @@ export const CustomersPage = () => {
         'Customer_Mobile': customer['Customer_Mobile'],
         'Agent ID': customer['Agent ID'],
         'Created at': customer['Created at'],
-        agentName: agentMap.get(customer['Agent ID']) || 'Unknown Agent',
+        agentName: customer['Agent ID'] || 'Unknown', // Use the username (Agent ID) directly
       }));
 
       setCustomers(customersWithAgents);
@@ -267,13 +267,13 @@ export const CustomersPage = () => {
 
       // Fetch agents for mapping
       const { data: agentsData } = await supabase
-        .from('Agent')
-        .select('"Agent ID", "Full Name"');
+        .from('agentsdata')
+        .select('"Username", "Full Name"');
 
-      const agentMap = new Map<number, string>();
+      const agentMap = new Map<string, string>();
       if (agentsData) {
         agentsData.forEach(agent => {
-          agentMap.set(agent['Agent ID'], agent['Full Name']);
+          agentMap.set(agent['Username'], agent['Full Name']);
         });
       }
 
@@ -285,7 +285,7 @@ export const CustomersPage = () => {
         customer['id'],
         customer['Customer_Name'],
         customer['Customer_Mobile'] || 'N/A',
-        agentMap.get(customer['Agent ID']) || 'Unknown Agent',
+        customer['Agent ID'] || 'Unknown', // Use Username for reporting
         customer['Agent ID'],
         formatDate(customer['Created at'] || '')
       ]);
@@ -468,20 +468,23 @@ export const CustomersPage = () => {
                         title="Previous page"
                       >
                         <span className="material-symbols-outlined">chevron_left</span>
+                        <span>Previous</span>
                       </button>
                       
                       <div className="pagination-info">
-                        <span className="pagination-text">
-                          Page <strong>{currentPage}</strong> of <strong>{Math.ceil(totalCount / pageSize)}</strong>
-                        </span>
+                        <div className="pagination-text">
+                          Page <strong>{currentPage}</strong>
+                          <span className="pagination-total">of {Math.ceil(totalCount / pageSize)}</span>
+                        </div>
                       </div>
-
+                      
                       <button 
                         className="pagination-button"
                         onClick={() => setCurrentPage(p => p + 1)}
                         disabled={currentPage >= Math.ceil(totalCount / pageSize)}
                         title="Next page"
                       >
+                        <span>Next</span>
                         <span className="material-symbols-outlined">chevron_right</span>
                       </button>
                       <button 
@@ -561,11 +564,12 @@ export const CustomersPage = () => {
                       </button>
                       
                       <div className="pagination-info">
-                        <span className="pagination-text">
-                          Page <strong>{currentPage}</strong> of <strong>{Math.ceil(totalCount / pageSize)}</strong>
-                        </span>
+                        <div className="pagination-text">
+                          Page <strong>{currentPage}</strong>
+                          <span className="pagination-total">of {Math.ceil(totalCount / pageSize)}</span>
+                        </div>
                       </div>
-
+                      
                       <button 
                         className="pagination-button"
                         onClick={() => setCurrentPage(p => p + 1)}

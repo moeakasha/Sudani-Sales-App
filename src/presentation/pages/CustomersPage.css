@@ -448,70 +448,83 @@ button.export-button:disabled {
 /* Pagination Controls */
 .pagination-container {
   background: #ffffff;
-  border-radius: 8px;
-  padding: 1.5rem;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
   margin-top: 1.5rem;
   margin-bottom: 2rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f3f4f6;
 }
 
 .pagination-controls {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .pagination-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: #f9fafb;
-  color: #000000;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: #4b5563;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s;
-  padding: 0;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.875rem;
+  font-weight: 500;
+  min-width: 40px;
 }
 
 .pagination-button:hover:not(:disabled) {
-  background: #f28f0a;
-  color: #ffffff;
-  border-color: #f28f0a;
+  background: #f9fafb;
+  color: #111827;
+  border-color: #d1d5db;
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(242, 143, 10, 0.2);
 }
 
 .pagination-button:disabled {
-  background: #f3f4f6;
-  color: #d1d5db;
+  background: #f9fafb;
+  color: #9ca3af;
   border-color: #e5e7eb;
   cursor: not-allowed;
   opacity: 0.5;
 }
 
-.pagination-button .material-symbols-outlined {
-  font-size: 20px;
-}
-
 .pagination-info {
   display: flex;
   align-items: center;
-  padding: 0 1rem;
+  gap: 0.5rem;
 }
 
 .pagination-text {
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   color: #6b7280;
-  white-space: nowrap;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .pagination-text strong {
-  color: #000000;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  color: #111827;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-weight: 700;
+  min-width: 2.5rem;
+}
+
+.pagination-total {
+  color: #9ca3af;
+  margin-left: 0.25rem;
 }
 
 /* Mobile Card View */
