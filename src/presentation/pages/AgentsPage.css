@@ -1,6 +1,7 @@
 .agents-content {
   flex: 1;
   padding: 20px;
+  padding-bottom: 60px;
   overflow-y: auto;
   background-color: #ebebeb;
   height: 100%;
@@ -9,11 +10,43 @@
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 2rem;
+  align-items: center;
+  margin-bottom: 1rem;
   gap: 2rem;
-  padding-top: 13px;
-  padding-bottom: 13px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.add-agent-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: #f28f0a;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(242, 143, 10, 0.2);
+}
+
+.add-agent-button:hover {
+  background: #e58709;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(242, 143, 10, 0.3);
+}
+
+.add-agent-button:active {
+  transform: translateY(0);
 }
 
 .page-title-section {
@@ -67,9 +100,9 @@
 /* Filters Section */
 .filters-section {
   background: #ffffff;
-  padding: 1.5rem;
+  padding: 1rem;
   border-radius: 8px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: row;
@@ -299,7 +332,7 @@ button.export-button:disabled {
 }
 
 .data-table th {
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   text-align: left;
   font-size: 0.75rem;
   font-weight: 600;
@@ -343,8 +376,8 @@ button.export-button:disabled {
 }
 
 .data-table td {
-  padding: 1rem;
-  font-size: 0.9375rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
   color: #000000;
 }
 
@@ -356,8 +389,8 @@ button.export-button:disabled {
 }
 
 .agent-avatar {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: #f28f0a;
   color: #ffffff;
@@ -381,8 +414,19 @@ button.export-button:disabled {
 }
 
 .agent-id {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.8125rem;
+  color: #4b5563;
+}
+
+.mobile-cell {
   font-weight: 500;
-  color: #6b7280;
+  color: #1f2937;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .location-cell {
@@ -474,28 +518,33 @@ button.export-button:disabled {
 
 /* Action Buttons */
 .action-button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 6px;
-  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #6b7280;
+  cursor: pointer;
   transition: all 0.2s;
 }
 
-.action-button .material-symbols-outlined {
-  font-size: 20px;
-  color: #6b7280;
+.edit-button:hover {
+  color: #f28f0a !important;
+  border-color: #f28f0a !important;
+  background: #fffaf0 !important;
 }
 
-.action-button:hover {
-  background: #f3f4f6;
+.delete-button:hover {
+  color: #ef4444 !important;
+  border-color: #ef4444 !important;
+  background: #fef2f2 !important;
 }
 
-.edit-button:hover .material-symbols-outlined {
-  color: #f28f0a;
+.action-button span {
+  font-size: 18px;
 }
 
 /* Modal */
@@ -526,11 +575,25 @@ button.export-button:disabled {
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  max-width: 500px;
+  max-width: 550px;
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
   animation: slideUp 0.3s ease-out;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group.full-width {
+  grid-column: span 2;
+}
+
+.form-group {
+  margin-bottom: 0.5rem;
 }
 
 @keyframes slideUp {
@@ -882,14 +945,13 @@ button.export-button:disabled {
 
 /* Pagination Controls */
 .pagination-controls {
-  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1.25rem;
   background: #ffffff;
   border-radius: 12px;
-  margin-top: 1.5rem;
+  margin-top: 1rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   border: 1px solid #f3f4f6;
 }
@@ -977,12 +1039,22 @@ button.export-button:disabled {
 
 
 .mobile-pagination-only {
-  display: none;
+  display: none !important;
 }
 
 @media (max-width: 768px) {
   .mobile-pagination-only {
-    display: flex;
+    display: flex !important;
     margin-bottom: 2rem;
+  }
+}
+
+.desktop-pagination-only {
+  display: flex !important;
+}
+
+@media (max-width: 768px) {
+  .desktop-pagination-only {
+    display: none !important;
   }
 }

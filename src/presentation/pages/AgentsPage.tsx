@@ -33,11 +33,21 @@ export const AgentsPage = () => {
   // Start with sidebar open on desktop, closed on mobile
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   
-  // Edit modal state
+  // Modals state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
-  const [editedName, setEditedName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Form state
+  const [agentForm, setAgentForm] = useState({
+    username: '',
+    fullName: '',
+    mobile: '',
+    region: '',
+    centerName: ''
+  });
 
   useEffect(() => {
     fetchAgents();
@@ -177,49 +187,127 @@ export const AgentsPage = () => {
 
   const handleEditClick = (agent: Agent) => {
     setSelectedAgent(agent);
-    setEditedName(agent['Full Name']);
+    setAgentForm({
+      username: agent['Username'],
+      fullName: agent['Full Name'],
+      mobile: agent['Mobile'] || '',
+      region: agent['Region'] || '',
+      centerName: agent['Center Name'] || ''
+    });
     setIsEditModalOpen(true);
+  };
+
+  const handleAddClick = () => {
+    setAgentForm({
+      username: '',
+      fullName: '',
+      mobile: '',
+      region: '',
+      centerName: ''
+    });
+    setIsAddModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsEditModalOpen(false);
+    setIsAddModalOpen(false);
     setSelectedAgent(null);
-    setEditedName('');
   };
 
-  const handleSaveAgent = async () => {
-    if (!selectedAgent || !editedName.trim()) {
-      alert('Please enter a valid name');
+  const handleAddAgent = async () => {
+    if (!agentForm.username.trim() || !agentForm.fullName.trim()) {
+      alert('Username and Full Name are required');
       return;
     }
 
     try {
       setIsSaving(true);
 
-      // Update agent (RLS allows authenticated users to write)
+      const newAgent = {
+        'Username': agentForm.username.trim(),
+        'Full Name': agentForm.fullName.trim(),
+        'Mobile': agentForm.mobile.trim(),
+        'Region': agentForm.region.trim(),
+        'Center Name': agentForm.centerName.trim(),
+        'created_at': new Date().toISOString()
+      };
+
       const { error } = await supabase
         .from('agentsdata')
-        .update({ 'Full Name': editedName.trim() })
-        .eq('Username', selectedAgent['Username']);
+        .insert([newAgent]);
 
       if (error) {
-        console.error('Error updating agent:', error);
-        if (error.message.includes('permission') || error.message.includes('policy')) {
-          alert('Permission denied. You do not have permission to update this agent.');
+        console.error('Error adding agent:', error);
+        if (error.code === '23505') {
+          alert('Username already exists. Please choose a different one.');
         } else {
-          alert('Failed to update agent. Please try again.');
+          alert('Failed to add agent. Please try again.');
         }
         throw error;
       }
 
-      // Update local state
-      const updatedAgents = agents.map(agent =>
-        agent['Username'] === selectedAgent['Username']
-          ? { ...agent, 'Full Name': editedName.trim() }
-          : agent
-      );
-      setAgents(updatedAgents);
+      await fetchAgents();
+      handleCloseModal();
+    } catch (error) {
+      console.error('Error adding agent:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
+  const handleDeleteAgent = async (agent: Agent) => {
+    if (!window.confirm(`Are you sure you want to delete agent ${agent['Full Name']}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+
+      const { error } = await supabase
+        .from('agentsdata')
+        .delete()
+        .eq('Username', agent['Username']);
+
+      if (error) {
+        console.error('Error deleting agent:', error);
+        alert('Failed to delete agent. Please try again.');
+        throw error;
+      }
+
+      await fetchAgents();
+    } catch (error) {
+      console.error('Error deleting agent:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleSaveAgent = async () => {
+    if (!selectedAgent || !agentForm.fullName.trim()) {
+      alert('Full Name is required');
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+
+      const { error } = await supabase
+        .from('agentsdata')
+        .update({ 
+          'Full Name': agentForm.fullName.trim(),
+          'Mobile': agentForm.mobile.trim(),
+          'Region': agentForm.region.trim(),
+          'Center Name': agentForm.centerName.trim()
+        })
+        .eq('Username', selectedAgent['Username']);
+
+      if (error) {
+        console.error('Error updating agent:', error);
+        alert('Failed to update agent. Please try again.');
+        throw error;
+      }
+
+      await fetchAgents();
       handleCloseModal();
     } catch (error) {
       console.error('Error updating agent:', error);
@@ -251,14 +339,20 @@ export const AgentsPage = () => {
                 <h1 className="page-title">Agents</h1>
                 <p className="page-subtitle">Manage and view all sales agents</p>
               </div>
-              <div className="page-stats">
-                <div className="stat-badge">
-                  <span className="stat-value">{totalAgents}</span>
-                  <span className="stat-label">Total Agents</span>
-                </div>
-                <div className="stat-badge">
-                  <span className="stat-value">{activeAgents}</span>
-                  <span className="stat-label">Active</span>
+              <div className="page-actions">
+                <button className="add-agent-button" onClick={handleAddClick}>
+                  <span className="material-symbols-outlined">person_add</span>
+                  <span>Add Agent</span>
+                </button>
+                <div className="page-stats">
+                  <div className="stat-badge">
+                    <span className="stat-value">{totalAgents}</span>
+                    <span className="stat-label">Total Agents</span>
+                  </div>
+                  <div className="stat-badge">
+                    <span className="stat-value">{activeAgents}</span>
+                    <span className="stat-label">Active</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -332,6 +426,7 @@ export const AgentsPage = () => {
                             </span>
                           </div>
                         </th>
+                        <th>Mobile</th>
                         <th>Region</th>
                         <th className="sortable" onClick={() => handleSort('Agent ID')}>
                           <div className="th-content">
@@ -388,6 +483,9 @@ export const AgentsPage = () => {
                               <span className="username-cell">{agent['Username']}</span>
                             </td>
                             <td>
+                              <span className="mobile-cell">{agent['Mobile'] || 'N/A'}</span>
+                            </td>
+                            <td>
                               <span className="region-badge">{agent['Region'] || 'N/A'}</span>
                             </td>
                             <td>
@@ -402,13 +500,21 @@ export const AgentsPage = () => {
                                 {(agent.customerCount || 0) > 0 ? 'Active' : 'Inactive'}
                               </span>
                             </td>
-                            <td>
+                            <td className="actions-cell">
                               <button
                                 className="action-button edit-button"
                                 onClick={() => handleEditClick(agent)}
                                 title="Edit agent"
                               >
                                 <span className="material-symbols-outlined">edit</span>
+                              </button>
+                              <button
+                                className="action-button delete-button"
+                                onClick={() => handleDeleteAgent(agent)}
+                                title="Delete agent"
+                                disabled={isDeleting}
+                              >
+                                <span className="material-symbols-outlined">delete</span>
                               </button>
                             </td>
                           </tr>
@@ -420,7 +526,7 @@ export const AgentsPage = () => {
 
                 {/* Pagination Controls */}
                 {totalAgents > pageSize && (
-                  <div className="pagination-controls">
+                  <div className="pagination-controls desktop-pagination-only">
                     <button 
                       className="pagination-button" 
                       disabled={currentPage === 1}
@@ -466,6 +572,10 @@ export const AgentsPage = () => {
                         </div>
                         <div className="agent-card-body">
                           <div className="agent-card-row">
+                            <span className="agent-card-label">Mobile</span>
+                            <span className="agent-card-value">{agent['Mobile'] || 'N/A'}</span>
+                          </div>
+                          <div className="agent-card-row">
                             <span className="agent-card-label">Region</span>
                             <span className="agent-card-value">{agent['Region'] || 'N/A'}</span>
                           </div>
@@ -500,6 +610,15 @@ export const AgentsPage = () => {
                           >
                             <span className="material-symbols-outlined">edit</span>
                             <span>Edit</span>
+                          </button>
+                          <button
+                            className="action-button delete-button"
+                            onClick={() => handleDeleteAgent(agent)}
+                            title="Delete agent"
+                            disabled={isDeleting}
+                          >
+                            <span className="material-symbols-outlined">delete</span>
+                            <span>Delete</span>
                           </button>
                         </div>
                       </div>
@@ -538,39 +657,80 @@ export const AgentsPage = () => {
         </div>
       </div>
 
-      {/* Edit Agent Modal */}
-      {isEditModalOpen && (
+      {/* Add/Edit Agent Modal */}
+      {(isEditModalOpen || isAddModalOpen) && (
         <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Edit Agent</h2>
+              <h2>{isAddModalOpen ? 'Add New Agent' : 'Edit Agent'}</h2>
               <button className="modal-close-button" onClick={handleCloseModal}>
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
             
             <div className="modal-body">
-              <div className="form-group">
-                <label htmlFor="agentName">Agent Name</label>
-                <input
-                  id="agentName"
-                  type="text"
-                  className="modal-input"
-                  value={editedName}
-                  onChange={(e) => setEditedName(e.target.value)}
-                  placeholder="Enter agent name"
-                  autoFocus
-                />
-              </div>
-              
-              <div className="agent-details">
-                <div className="detail-item">
-                  <span className="detail-label">Username:</span>
-                  <span className="detail-value">{selectedAgent?.['Username']}</span>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label htmlFor="agentUsername">Username *</label>
+                  <input
+                    id="agentUsername"
+                    type="text"
+                    className="modal-input"
+                    value={agentForm.username}
+                    onChange={(e) => setAgentForm({ ...agentForm, username: e.target.value })}
+                    placeholder="e.g. mohmedaao"
+                    disabled={isEditModalOpen}
+                    autoFocus={isAddModalOpen}
+                  />
                 </div>
-                <div className="detail-item">
-                  <span className="detail-label">Region:</span>
-                  <span className="detail-value">{selectedAgent?.['Region']}</span>
+                
+                <div className="form-group">
+                  <label htmlFor="agentName">Full Name *</label>
+                  <input
+                    id="agentName"
+                    type="text"
+                    className="modal-input"
+                    value={agentForm.fullName}
+                    onChange={(e) => setAgentForm({ ...agentForm, fullName: e.target.value })}
+                    placeholder="Enter agent full name"
+                    autoFocus={isEditModalOpen}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="agentMobile">Mobile Number</label>
+                  <input
+                    id="agentMobile"
+                    type="text"
+                    className="modal-input"
+                    value={agentForm.mobile}
+                    onChange={(e) => setAgentForm({ ...agentForm, mobile: e.target.value })}
+                    placeholder="e.g. 0912345678"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="agentRegion">Region</label>
+                  <input
+                    id="agentRegion"
+                    type="text"
+                    className="modal-input"
+                    value={agentForm.region}
+                    onChange={(e) => setAgentForm({ ...agentForm, region: e.target.value })}
+                    placeholder="e.g. Khartoum"
+                  />
+                </div>
+
+                <div className="form-group full-width">
+                  <label htmlFor="agentCenter">Center Name</label>
+                  <input
+                    id="agentCenter"
+                    type="text"
+                    className="modal-input"
+                    value={agentForm.centerName}
+                    onChange={(e) => setAgentForm({ ...agentForm, centerName: e.target.value })}
+                    placeholder="e.g. Omdurman Center"
+                  />
                 </div>
               </div>
             </div>
@@ -581,8 +741,8 @@ export const AgentsPage = () => {
               </button>
               <button 
                 className="modal-button save-button" 
-                onClick={handleSaveAgent}
-                disabled={isSaving || !editedName.trim()}
+                onClick={isAddModalOpen ? handleAddAgent : handleSaveAgent}
+                disabled={isSaving || !agentForm.username.trim() || !agentForm.fullName.trim()}
               >
                 {isSaving ? (
                   <>
@@ -591,8 +751,8 @@ export const AgentsPage = () => {
                   </>
                 ) : (
                   <>
-                    <span className="material-symbols-outlined">save</span>
-                    <span>Save</span>
+                    <span className="material-symbols-outlined">{isAddModalOpen ? 'person_add' : 'save'}</span>
+                    <span>{isAddModalOpen ? 'Add Agent' : 'Save Changes'}</span>
                   </>
                 )}
               </button>
