@@ -32,7 +32,7 @@ export const AgentsPage = () => {
   const [pageSize] = useState(100);
   // Start with sidebar open on desktop, closed on mobile
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
-  
+
   // Modals state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -151,7 +151,7 @@ export const AgentsPage = () => {
   const exportToCSV = () => {
     // Prepare CSV headers
     const headers = ['Username', 'Full Name', 'Region', 'Center Name', 'Mobile', 'Telegram ID', 'Join Date', 'Customers', 'Status'];
-    
+
     // Prepare CSV rows
     const rows = filteredAgents.map(agent => [
       agent['Username'],
@@ -175,11 +175,11 @@ export const AgentsPage = () => {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
-    
+
     link.setAttribute('href', url);
     link.setAttribute('download', `agents_export_${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
-    
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -293,7 +293,7 @@ export const AgentsPage = () => {
 
       const { error } = await supabase
         .from('agentsdata')
-        .update({ 
+        .update({
           'Full Name': agentForm.fullName.trim(),
           'Mobile': agentForm.mobile.trim(),
           'Region': agentForm.region.trim(),
@@ -322,17 +322,17 @@ export const AgentsPage = () => {
 
   return (
     <div className="dashboard-page">
-      <DashboardHeader onMenuClick={toggleSidebar} />
       <div className="dashboard-layout">
         {/* Backdrop for mobile */}
         {isSidebarOpen && window.innerWidth <= 768 && (
-          <div 
-            className="sidebar-backdrop visible" 
+          <div
+            className="sidebar-backdrop visible"
             onClick={toggleSidebar}
           />
         )}
         <DashboardSidebar isOpen={isSidebarOpen} onToggle={toggleSidebar} />
         <div className={`dashboard-main ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+          <DashboardHeader onMenuClick={toggleSidebar} />
           <main className="agents-content">
             <div className="page-header">
               <div className="page-title-section">
@@ -390,8 +390,8 @@ export const AgentsPage = () => {
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                 </select>
-                
-                <button 
+
+                <button
                   className="export-button"
                   onClick={exportToCSV}
                   disabled={filteredAgents.length === 0}
@@ -527,8 +527,8 @@ export const AgentsPage = () => {
                 {/* Pagination Controls */}
                 {totalAgents > pageSize && (
                   <div className="pagination-controls desktop-pagination-only">
-                    <button 
-                      className="pagination-button" 
+                    <button
+                      className="pagination-button"
                       disabled={currentPage === 1}
                       onClick={() => setCurrentPage(prev => prev - 1)}
                     >
@@ -539,8 +539,8 @@ export const AgentsPage = () => {
                       Page <span>{currentPage}</span>
                       <span className="pagination-total">of {Math.ceil(totalAgents / pageSize)}</span>
                     </div>
-                    <button 
-                      className="pagination-button" 
+                    <button
+                      className="pagination-button"
                       disabled={currentPage >= Math.ceil(totalAgents / pageSize)}
                       onClick={() => setCurrentPage(prev => prev + 1)}
                     >
@@ -553,7 +553,7 @@ export const AgentsPage = () => {
                 {/* Mobile Card View */}
                 <div className="mobile-card-list">
                   {filteredAgents.length === 0 ? (
-                    <div className="empty-state" style={{ background: '#ffffff', borderRadius: '8px', padding: '4rem 2rem' }}>
+                    <div className="empty-state empty-state-card">
                       <span className="material-symbols-outlined empty-icon">person_off</span>
                       <p>No agents found</p>
                       <small>Try adjusting your search or filters</small>
@@ -625,12 +625,12 @@ export const AgentsPage = () => {
                     ))
                   )}
                 </div>
-                
+
                 {/* Pagination Controls for Mobile */}
                 {totalAgents > pageSize && (
                   <div className="pagination-controls mobile-pagination-only">
-                    <button 
-                      className="pagination-button" 
+                    <button
+                      className="pagination-button"
                       disabled={currentPage === 1}
                       onClick={() => setCurrentPage(prev => prev - 1)}
                     >
@@ -641,8 +641,8 @@ export const AgentsPage = () => {
                       Page <span>{currentPage}</span>
                       <span className="pagination-total">of {Math.ceil(totalAgents / pageSize)}</span>
                     </div>
-                    <button 
-                      className="pagination-button" 
+                    <button
+                      className="pagination-button"
                       disabled={currentPage >= Math.ceil(totalAgents / pageSize)}
                       onClick={() => setCurrentPage(prev => prev + 1)}
                     >
@@ -667,7 +667,7 @@ export const AgentsPage = () => {
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
-            
+
             <div className="modal-body">
               <div className="form-grid">
                 <div className="form-group">
@@ -683,7 +683,7 @@ export const AgentsPage = () => {
                     autoFocus={isAddModalOpen}
                   />
                 </div>
-                
+
                 <div className="form-group">
                   <label htmlFor="agentName">Full Name *</label>
                   <input
@@ -734,13 +734,13 @@ export const AgentsPage = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="modal-footer">
               <button className="modal-button cancel-button" onClick={handleCloseModal} disabled={isSaving}>
                 Cancel
               </button>
-              <button 
-                className="modal-button save-button" 
+              <button
+                className="modal-button save-button"
                 onClick={isAddModalOpen ? handleAddAgent : handleSaveAgent}
                 disabled={isSaving || !agentForm.username.trim() || !agentForm.fullName.trim()}
               >

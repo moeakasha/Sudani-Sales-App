@@ -1,0 +1,43 @@
+/* Sudani Business design tokens */
+:root {
+  /* Surfaces */
+  --sb-bg: #04071a;
+  --sb-bg-gradient:
+    radial-gradient(120% 90% at 0% 0%, #1c2c63 0%, #0a1640 35%, #050a23 70%, #04071a 100%);
+  --sb-surface-1: rgba(18, 28, 64, 0.55);
+  --sb-surface-2: rgba(22, 34, 78, 0.7);
+  --sb-surface-raised: rgba(28, 42, 92, 0.6);
+
+  /* Borders */
+  --sb-border-soft: rgba(255, 255, 255, 0.06);
+  --sb-border: rgba(255, 255, 255, 0.1);
+  --sb-border-strong: rgba(255, 255, 255, 0.16);
+
+  /* Brand */
+  --sb-orange: #ff7a1a;
+  --sb-orange-strong: #ff6a00;
+  --sb-orange-soft: rgba(255, 122, 26, 0.16);
+
+  /* Nav */
+  --sb-nav-active: linear-gradient(135deg, #2456ff 0%, #1832b3 100%);
+  --sb-nav-hover: rgba(255, 255, 255, 0.05);
+
+  /* Text */
+  --sb-text: #ffffff;
+  --sb-text-muted: #a3aac9;
+  --sb-text-dim: #6b7494;
+
+  /* Radii */
+  --sb-radius-sm: 10px;
+  --sb-radius-md: 16px;
+  --sb-radius-lg: 22px;
+  --sb-radius-pill: 999px;
+
+  /* Shadows */
+  --sb-shadow-card: 0 4px 24px rgba(0, 0, 0, 0.28);
+  --sb-shadow-active: 0 8px 24px rgba(36, 86, 255, 0.35);
+
+  /* Status */
+  --sb-success: #10b981;
+  --sb-danger: #ef4444;
+}

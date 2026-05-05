@@ -28,17 +28,17 @@ export const DashboardPage = () => {
 
   return (
     <div className="dashboard-page">
-      <DashboardHeader onMenuClick={toggleSidebar} />
       <div className="dashboard-layout">
         {/* Backdrop for mobile */}
         {isSidebarOpen && window.innerWidth <= 768 && (
-          <div 
-            className="sidebar-backdrop visible" 
+          <div
+            className="sidebar-backdrop visible"
             onClick={toggleSidebar}
           />
         )}
         <DashboardSidebar isOpen={isSidebarOpen} onToggle={toggleSidebar} />
         <div className={`dashboard-main ${isSidebarOpen ? 'sidebar-open' : ''}`}>
+          <DashboardHeader onMenuClick={toggleSidebar} />
           <DashboardContent />
         </div>
       </div>

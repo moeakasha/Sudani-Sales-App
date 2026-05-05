@@ -232,7 +232,9 @@ export const DashboardContent = () => {
   return (
     <main className="dashboard-content">
       <div className="welcome-section">
-        <h1 className="welcome-title">Welcome Back, {user?.name || 'User'}</h1>
+        <h1 className="welcome-title">
+          Welcome, <span className="welcome-name">{user?.name || 'User'}!</span>
+        </h1>
         <div className="account-info">
           <p className="account-name">ACCOUNT NAME: {user?.accountName || 'ORGANIZATION'}</p>
           <p className="account-number">ACCOUNT NUMBER: {user?.accountNumber || '#SD1123'}</p>

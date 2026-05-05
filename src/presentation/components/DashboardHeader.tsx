@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../infrastructure/auth/AuthContext';
-import { Logo } from './Logo';
 import './DashboardHeader.css';
 
 interface DashboardHeaderProps {
@@ -49,7 +48,6 @@ export const DashboardHeader = ({ onMenuClick }: DashboardHeaderProps) => {
         <button className="menu-toggle" onClick={onMenuClick} aria-label="Toggle menu">
           <span className="material-symbols-outlined">menu</span>
         </button>
-        <Logo />
         <div className="search-container">
           <input
             type="text"

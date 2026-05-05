@@ -320,17 +320,17 @@ export const CustomersPage = () => {
 
   return (
     <div className="dashboard-page">
-      <DashboardHeader onMenuClick={toggleSidebar} />
       <div className="dashboard-layout">
         {/* Backdrop for mobile */}
         {isSidebarOpen && window.innerWidth <= 768 && (
-          <div 
-            className="sidebar-backdrop visible" 
+          <div
+            className="sidebar-backdrop visible"
             onClick={toggleSidebar}
           />
         )}
         <DashboardSidebar isOpen={isSidebarOpen} onToggle={toggleSidebar} />
         <div className={`dashboard-main ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+          <DashboardHeader onMenuClick={toggleSidebar} />
           <main className="customers-content">
             <div className="page-header">
               <div className="page-title-section">
@@ -502,7 +502,7 @@ export const CustomersPage = () => {
                 {/* Mobile Card View */}
                 <div className="mobile-card-list">
                   {customers.length === 0 ? (
-                    <div className="empty-state" style={{ background: '#ffffff', borderRadius: '8px', padding: '4rem 2rem' }}>
+                    <div className="empty-state empty-state-card">
                       <span className="material-symbols-outlined empty-icon">group_off</span>
                       <p>No customers found</p>
                       <small>Try adjusting your search or filters</small>

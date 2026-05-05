@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Header } from '../components/Header';
-import { Footer } from '../components/Footer';
+import LanguageIcon from '@mui/icons-material/Language';
+import { Logo } from '../components/Logo';
 import { LoginForm } from '../components/LoginForm';
 import type { LoginCredentials } from '../../domain/entities/LoginCredentials';
 import { LoginUseCase } from '../../domain/use-cases/LoginUseCase';
@@ -23,7 +23,6 @@ export const LoginPage = () => {
     try {
       const user = await loginUseCase.execute(credentials);
       console.log('Login successful:', user);
-      // Redirect to dashboard on successful login
       navigate('/dashboard');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Login failed. Please try again.';
@@ -36,20 +35,41 @@ export const LoginPage = () => {
 
   return (
     <div className="login-page">
-      <Header />
-      <div className="login-container">
+      <section className="login-form-panel">
+        <div className="login-brand">
+          <Logo />
+        </div>
+
         <div className="login-content">
           <h1 className="login-title">Login to Sudani Business</h1>
-          <p className="login-subtitle">Empowering Your Business with Innovative Digital Solutions</p>
+          <p className="login-subtitle">
+            Empowering Your Business with Innovative Digital Solutions
+          </p>
           <LoginForm
             onSubmit={handleLogin}
             isLoading={isLoading}
             error={error}
           />
         </div>
-      </div>
-      <Footer />
+
+        <div className="login-legal">
+          <span className="legal-copyright">
+            © {new Date().getFullYear()} <span className="legal-brand">Sudani</span>. All rights reserved.
+          </span>
+          <div className="legal-links">
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Service</a>
+            <a href="#">Cookies Settings</a>
+          </div>
+        </div>
+      </section>
+
+      <aside className="login-hero" aria-hidden="true">
+        <button className="language-pill" type="button">
+          <span>Language</span>
+          <LanguageIcon className="language-pill-icon" />
+        </button>
+      </aside>
     </div>
   );
 };
-

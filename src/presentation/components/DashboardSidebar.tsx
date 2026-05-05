@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { Logo } from './Logo';
 import './DashboardSidebar.css';
 
 interface DashboardSidebarProps {
@@ -10,19 +11,19 @@ export const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) =>
   const location = useLocation();
 
   const menuItems = [
-    { 
-      path: '/dashboard', 
-      label: 'Dashboard', 
+    {
+      path: '/dashboard',
+      label: 'Dashboard',
       icon: 'space_dashboard'
     },
-    { 
-      path: '/agents', 
-      label: 'Agents', 
+    {
+      path: '/agents',
+      label: 'Agents',
       icon: 'badge'
     },
-    { 
-      path: '/customers', 
-      label: 'Customers', 
+    {
+      path: '/customers',
+      label: 'Customers',
       icon: 'groups'
     },
   ];
@@ -36,6 +37,17 @@ export const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) =>
 
   return (
     <aside className={`dashboard-sidebar ${isOpen ? 'open' : 'closed'}`}>
+      <div className="sidebar-brand">
+        <Logo />
+        <button
+          className="sidebar-collapse"
+          onClick={onToggle}
+          aria-label="Toggle sidebar"
+          type="button"
+        >
+          <span className="material-symbols-outlined">left_panel_close</span>
+        </button>
+      </div>
       <nav className="sidebar-nav">
         <ul className="nav-list">
           {menuItems.map((item) => {
@@ -58,4 +70,3 @@ export const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) =>
     </aside>
   );
 };
-
