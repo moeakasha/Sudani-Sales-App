@@ -19,7 +19,7 @@
   --sb-orange-soft: rgba(255, 122, 26, 0.16);
 
   /* Nav */
-  --sb-nav-active: linear-gradient(135deg, #2456ff 0%, #1832b3 100%);
+  --sb-nav-active: linear-gradient(90.53deg, rgba(0, 0, 205, 0.5), rgba(0, 0, 103, 0.5));
   --sb-nav-hover: rgba(255, 255, 255, 0.05);
 
   /* Text */
@@ -27,10 +27,11 @@
   --sb-text-muted: #a3aac9;
   --sb-text-dim: #6b7494;
 
-  /* Radii */
-  --sb-radius-sm: 10px;
-  --sb-radius-md: 16px;
-  --sb-radius-lg: 22px;
+  /* Radii — squircle-style (elliptical corners via the H/V slash notation
+     give a softer, continuous-feeling curve that approximates iOS squircles). */
+  --sb-radius-sm: 10px / 13px;
+  --sb-radius-md: 20px / 26px;
+  --sb-radius-lg: 28px / 36px;
   --sb-radius-pill: 999px;
 
   /* Shadows */

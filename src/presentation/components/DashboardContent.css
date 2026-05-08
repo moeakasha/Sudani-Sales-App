@@ -44,20 +44,6 @@
   color: var(--sb-text-muted);
 }
 
-.banner-section {
-  width: 100%;
-  margin-bottom: 1.75rem;
-}
-
-.banner-image {
-  width: 100%;
-  height: auto;
-  border-radius: var(--sb-radius-md);
-  display: block;
-  object-fit: cover;
-  border: 1px solid var(--sb-border-soft);
-}
-
 .loading-state {
   padding: 2rem;
   text-align: center;
@@ -435,10 +421,6 @@
   .account-name,
   .account-number {
     font-size: 0.75rem;
-  }
-
-  .banner-section {
-    margin-bottom: 1.25rem;
   }
 
   .kpi-summary,

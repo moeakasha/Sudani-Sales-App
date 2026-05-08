@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../infrastructure/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import bannerImage from '../../assets/banner.png';
 import './DashboardContent.css';
 
 interface Agent {
@@ -239,10 +238,6 @@ export const DashboardContent = () => {
           <p className="account-name">ACCOUNT NAME: {user?.accountName || 'ORGANIZATION'}</p>
           <p className="account-number">ACCOUNT NUMBER: {user?.accountNumber || '#SD1123'}</p>
         </div>
-      </div>
-
-      <div className="banner-section">
-        <img src={bannerImage} alt="Sudani Business Data Plan" className="banner-image" />
       </div>
 
       {loading ? (

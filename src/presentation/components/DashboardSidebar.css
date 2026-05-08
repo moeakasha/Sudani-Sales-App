@@ -113,7 +113,6 @@
 .nav-item.active {
   background: var(--sb-nav-active);
   color: var(--sb-text);
-  box-shadow: var(--sb-shadow-active);
   font-weight: 500;
 }
 
