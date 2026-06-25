@@ -5,6 +5,7 @@ import { LoginPage } from './presentation/pages/LoginPage';
 import { DashboardPage } from './presentation/pages/DashboardPage';
 import { AgentsPage } from './presentation/pages/AgentsPage';
 import { CustomersPage } from './presentation/pages/CustomersPage';
+import { CentersPage } from './presentation/pages/CentersPage';
 import './App.css';
 
 function App() {
@@ -29,13 +30,21 @@ function App() {
               </ProtectedRoute>
             } 
           />
-          <Route 
-            path="/customers" 
+          <Route
+            path="/customers"
             element={
               <ProtectedRoute>
                 <CustomersPage />
               </ProtectedRoute>
-            } 
+            }
+          />
+          <Route
+            path="/centers"
+            element={
+              <ProtectedRoute>
+                <CentersPage />
+              </ProtectedRoute>
+            }
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
