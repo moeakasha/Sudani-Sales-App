@@ -869,6 +869,123 @@ td.empty-state {
   animation: sb-spin 0.9s linear infinite;
 }
 
+/* ---------- Center combobox (searchable dropdown + create-new) ---------- */
+.center-combobox {
+  position: relative;
+  width: 100%;
+}
+
+.center-combobox-input-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.center-combobox .modal-input {
+  width: 100%;
+  padding-right: 2.75rem;
+}
+
+.center-combobox-icon {
+  position: absolute;
+  right: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--sb-text-muted);
+  pointer-events: none;
+  font-size: 20px;
+}
+
+/* Opens upward — the field sits near the bottom of the modal. */
+.center-combobox-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 6px);
+  max-height: 240px;
+  overflow-y: auto;
+  background: linear-gradient(180deg, rgba(24, 38, 84, 0.98) 0%, rgba(12, 20, 52, 0.98) 100%);
+  border: 1px solid var(--sb-border);
+  border-radius: 12px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+  padding: 0.375rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 30;
+}
+
+.center-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.625rem;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--sb-text);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.12s ease;
+}
+
+.center-option:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.center-option.selected {
+  background: var(--sb-orange-soft);
+  color: var(--sb-orange);
+}
+
+.center-option .material-symbols-outlined {
+  font-size: 18px;
+  color: var(--sb-text-muted);
+  flex-shrink: 0;
+}
+
+.center-option.selected .material-symbols-outlined {
+  color: var(--sb-orange);
+}
+
+.center-option-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.center-option-empty {
+  padding: 0.5rem 0.625rem;
+  color: var(--sb-text-dim);
+  font-size: 0.8125rem;
+}
+
+.center-option-new {
+  margin-top: 2px;
+  border-top: 1px solid var(--sb-border-soft);
+  border-radius: 0 0 8px 8px;
+  color: var(--sb-orange);
+  font-weight: 600;
+}
+
+.center-option-new .material-symbols-outlined {
+  color: var(--sb-orange);
+}
+
+.center-new-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.4375rem;
+  font-size: 0.75rem;
+  color: var(--sb-orange);
+}
+
+.center-new-hint .material-symbols-outlined {
+  font-size: 15px;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .data-table th:nth-child(4),

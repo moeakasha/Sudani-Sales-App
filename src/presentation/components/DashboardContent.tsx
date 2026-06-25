@@ -12,6 +12,14 @@ interface Agent {
   customerCount: number;
 }
 
+interface TopCenter {
+  name: string;
+  total_agents: number;
+  active_agents: number;
+  total_customers: number;
+  rank: number;
+}
+
 export const DashboardContent = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<{ name?: string; lastLogin?: string; accountName?: string; accountNumber?: string } | null>(null);
@@ -25,6 +33,7 @@ export const DashboardContent = () => {
   const [allAgents, setAllAgents] = useState<Agent[]>([]);
   const [showAllAgents, setShowAllAgents] = useState(false);
   const [showAllInactive, setShowAllInactive] = useState(false);
+  const [topCenters, setTopCenters] = useState<TopCenter[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,6 +57,27 @@ export const DashboardContent = () => {
       }
     };
     getUser();
+  }, []);
+
+  useEffect(() => {
+    const fetchTopCenters = async () => {
+      const { data, error } = await supabase.rpc('get_centers_summary');
+      if (error) {
+        console.error('Error fetching top centers:', error);
+        return;
+      }
+      const rows: TopCenter[] = ((data as any[]) || [])
+        .slice(0, 5)
+        .map((r, index) => ({
+          name: r['Center Name'],
+          total_agents: Number(r.total_agents) || 0,
+          active_agents: Number(r.active_agents) || 0,
+          total_customers: Number(r.total_customers) || 0,
+          rank: index + 1,
+        }));
+      setTopCenters(rows);
+    };
+    fetchTopCenters();
   }, []);
 
   useEffect(() => {
@@ -227,6 +257,7 @@ export const DashboardContent = () => {
 
   const displayedTopAgents = showAllAgents ? allAgents : topAgents.slice(0, 5);
   const displayedInactiveAgents = showAllInactive ? inactiveAgents : inactiveAgents.slice(0, 5);
+  const maxTopCenterCustomers = Math.max(...topCenters.map(c => c.total_customers), 1);
 
   return (
     <main className="dashboard-content">
@@ -393,6 +424,38 @@ export const DashboardContent = () => {
               </div>
             </div>
           </div>
+
+          {/* Top 5 Performing Centers */}
+          {topCenters.length > 0 && (
+            <div className="users-section">
+              <h3 className="users-section-title">Top 5 Performing Centers</h3>
+              <div className="top-centers-grid">
+                {topCenters.map((center) => (
+                  <div key={center.name} className="top-center-card">
+                    <div className="top-center-head">
+                      <span className={`rank-chip rank-${center.rank}`}>#{center.rank}</span>
+                      <span className="material-symbols-outlined top-center-icon">storefront</span>
+                    </div>
+                    <div className="top-center-name" title={center.name}>{center.name}</div>
+                    <div className="top-center-customers">
+                      <span className="tc-value">{center.total_customers.toLocaleString()}</span>
+                      <span className="tc-label">customers</span>
+                    </div>
+                    <div className="top-center-bar">
+                      <div
+                        className="top-center-bar-fill"
+                        style={{ width: `${(center.total_customers / maxTopCenterCustomers) * 100}%` }}
+                      />
+                    </div>
+                    <div className="top-center-meta">
+                      <span>{center.total_agents} agents</span>
+                      <span className="tc-active">{center.active_agents} active</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* User Listing Tables */}
           <div className="users-section">

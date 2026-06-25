@@ -49,6 +49,11 @@ export const AgentsPage = () => {
     centerName: ''
   });
 
+  // Canonical center list (distinct names already in agentsdata) — powers the
+  // Add/Edit form's searchable center dropdown so new centers are deliberate, not typos.
+  const [centerOptions, setCenterOptions] = useState<string[]>([]);
+  const [showCenterMenu, setShowCenterMenu] = useState(false);
+
   useEffect(() => {
     fetchAgents();
   }, [searchQuery, sortField, sortOrder, statusFilter, currentPage]);
@@ -66,6 +71,24 @@ export const AgentsPage = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Load the canonical center list once (reuses the existing get_centers_summary RPC).
+  useEffect(() => {
+    fetchCenterOptions();
+  }, []);
+
+  const fetchCenterOptions = async () => {
+    const { data, error } = await supabase.rpc('get_centers_summary');
+    if (error) {
+      console.error('Error fetching center options:', error);
+      return;
+    }
+    const names = ((data as any[]) || [])
+      .map(r => r['Center Name'])
+      .filter((n): n is string => !!n && n.trim() !== '')
+      .sort((a, b) => a.localeCompare(b));
+    setCenterOptions(names);
+  };
 
   const fetchAgents = async () => {
     try {
@@ -247,6 +270,7 @@ export const AgentsPage = () => {
       }
 
       await fetchAgents();
+      await fetchCenterOptions();
       handleCloseModal();
     } catch (error) {
       console.error('Error adding agent:', error);
@@ -308,6 +332,7 @@ export const AgentsPage = () => {
       }
 
       await fetchAgents();
+      await fetchCenterOptions();
       handleCloseModal();
     } catch (error) {
       console.error('Error updating agent:', error);
@@ -319,6 +344,16 @@ export const AgentsPage = () => {
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
+
+  // Center combobox helpers
+  const trimmedCenter = agentForm.centerName.trim();
+  const centerExactMatch = centerOptions.some(
+    c => c.toLowerCase() === trimmedCenter.toLowerCase()
+  );
+  const filteredCenterOptions = centerOptions
+    .filter(c => c.toLowerCase().includes(trimmedCenter.toLowerCase()))
+    .slice(0, 50);
+  const isNewCenter = trimmedCenter !== '' && !centerExactMatch;
 
   return (
     <div className="dashboard-page">
@@ -723,14 +758,70 @@ export const AgentsPage = () => {
 
                 <div className="form-group full-width">
                   <label htmlFor="agentCenter">Center Name</label>
-                  <input
-                    id="agentCenter"
-                    type="text"
-                    className="modal-input"
-                    value={agentForm.centerName}
-                    onChange={(e) => setAgentForm({ ...agentForm, centerName: e.target.value })}
-                    placeholder="e.g. Omdurman Center"
-                  />
+                  <div className="center-combobox">
+                    <div className="center-combobox-input-wrap">
+                      <input
+                        id="agentCenter"
+                        type="text"
+                        className="modal-input"
+                        value={agentForm.centerName}
+                        onChange={(e) => {
+                          setAgentForm({ ...agentForm, centerName: e.target.value });
+                          setShowCenterMenu(true);
+                        }}
+                        onFocus={() => setShowCenterMenu(true)}
+                        onBlur={() => setTimeout(() => setShowCenterMenu(false), 120)}
+                        placeholder="Search or add a center..."
+                        autoComplete="off"
+                      />
+                      <span className="material-symbols-outlined center-combobox-icon">storefront</span>
+                    </div>
+
+                    {showCenterMenu && (
+                      <div className="center-combobox-menu">
+                        {filteredCenterOptions.length > 0 ? (
+                          filteredCenterOptions.map((name) => (
+                            <button
+                              type="button"
+                              key={name}
+                              className={`center-option ${name === agentForm.centerName ? 'selected' : ''}`}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                setAgentForm({ ...agentForm, centerName: name });
+                                setShowCenterMenu(false);
+                              }}
+                            >
+                              <span className="material-symbols-outlined">storefront</span>
+                              <span className="center-option-name">{name}</span>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="center-option-empty">No matching centers</div>
+                        )}
+
+                        {isNewCenter && (
+                          <button
+                            type="button"
+                            className="center-option center-option-new"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setShowCenterMenu(false);
+                            }}
+                          >
+                            <span className="material-symbols-outlined">add_business</span>
+                            <span className="center-option-name">Create new center: “{trimmedCenter}”</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {isNewCenter && (
+                    <span className="center-new-hint">
+                      <span className="material-symbols-outlined">info</span>
+                      New center — it will be added to the list
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
