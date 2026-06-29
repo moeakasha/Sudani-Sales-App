@@ -6,6 +6,7 @@ import { DashboardPage } from './presentation/pages/DashboardPage';
 import { AgentsPage } from './presentation/pages/AgentsPage';
 import { CustomersPage } from './presentation/pages/CustomersPage';
 import { CentersPage } from './presentation/pages/CentersPage';
+import { EngagementPage } from './presentation/pages/EngagementPage';
 import './App.css';
 
 function App() {
@@ -43,6 +44,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <CentersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/engagement"
+            element={
+              <ProtectedRoute>
+                <EngagementPage />
               </ProtectedRoute>
             }
           />

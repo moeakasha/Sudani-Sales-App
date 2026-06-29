@@ -31,6 +31,11 @@ export const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) =>
       label: 'Centers',
       icon: 'storefront'
     },
+    {
+      path: '/engagement',
+      label: 'Engagement',
+      icon: 'campaign'
+    },
   ];
 
   const handleLinkClick = () => {
