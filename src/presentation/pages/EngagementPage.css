@@ -34,10 +34,12 @@
   margin: 0;
 }
 
-/* Centered single card */
+/* Centered stacked cards */
 .engage-simple {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
   padding-top: 1rem;
 }
 
@@ -120,6 +122,48 @@
   font-size: 0.75rem;
   color: var(--sb-text-muted);
   font-weight: 500;
+}
+
+/* Broadcast message field */
+.broadcast-field {
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.broadcast-input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 120px;
+  resize: vertical;
+  padding: 0.875rem 1rem;
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--sb-border-soft);
+  border-radius: 14px;
+  color: var(--sb-text);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  font-family: inherit;
+  outline: none;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.broadcast-input::placeholder {
+  color: var(--sb-text-dim);
+}
+
+.broadcast-input:focus {
+  background-color: rgba(255, 255, 255, 0.07);
+  border-color: var(--sb-orange);
+}
+
+.broadcast-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--sb-text-muted);
 }
 
 /* Result banners */
