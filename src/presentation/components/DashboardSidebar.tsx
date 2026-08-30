@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Logo } from './Logo';
+import { useAuth } from '../../infrastructure/auth/AuthContext';
 import './DashboardSidebar.css';
 
 interface DashboardSidebarProps {
@@ -9,6 +10,7 @@ interface DashboardSidebarProps {
 
 export const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) => {
   const location = useLocation();
+  const { isViewer } = useAuth();
 
   const menuItems = [
     {
@@ -31,11 +33,12 @@ export const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) =>
       label: 'Centers',
       icon: 'storefront'
     },
-    {
+    // Engagement (sending reminders/broadcasts) is a write action — hidden for read-only viewers.
+    ...(isViewer ? [] : [{
       path: '/engagement',
       label: 'Engagement',
       icon: 'campaign'
-    },
+    }]),
   ];
 
   const handleLinkClick = () => {

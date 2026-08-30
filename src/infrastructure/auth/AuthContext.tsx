@@ -5,12 +5,14 @@ import { supabase } from '../supabase/client';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isViewer: boolean;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
+  isViewer: false,
   signOut: async () => {},
 });
 
@@ -70,9 +72,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  // Role comes from admin-controlled app_metadata (set in Supabase), so it
+  // can't be self-escalated by the user. Read-only users carry role = 'viewer'.
+  const isViewer = user?.app_metadata?.role === 'viewer';
+
   const value = {
     user,
     loading,
+    isViewer,
     signOut,
   };
 

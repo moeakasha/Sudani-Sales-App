@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../infrastructure/supabase/client';
+import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { DashboardHeader } from '../components/DashboardHeader';
 import { DashboardSidebar } from '../components/DashboardSidebar';
 import './AgentsPage.css';
@@ -19,6 +20,7 @@ type SortField = 'Full Name' | 'Username' | 'Agent ID' | 'created_at' | 'custome
 type SortOrder = 'asc' | 'desc';
 
 export const AgentsPage = () => {
+  const { isViewer } = useAuth();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [filteredAgents, setFilteredAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -375,10 +377,12 @@ export const AgentsPage = () => {
                 <p className="page-subtitle">Manage and view all sales agents</p>
               </div>
               <div className="page-actions">
-                <button className="add-agent-button" onClick={handleAddClick}>
-                  <span className="material-symbols-outlined">person_add</span>
-                  <span>Add Agent</span>
-                </button>
+                {!isViewer && (
+                  <button className="add-agent-button" onClick={handleAddClick}>
+                    <span className="material-symbols-outlined">person_add</span>
+                    <span>Add Agent</span>
+                  </button>
+                )}
                 <div className="page-stats">
                   <div className="stat-badge">
                     <span className="stat-value">{totalAgents}</span>
@@ -488,7 +492,7 @@ export const AgentsPage = () => {
                           </div>
                         </th>
                         <th>Status</th>
-                        <th>Actions</th>
+                        {!isViewer && <th>Actions</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -535,23 +539,25 @@ export const AgentsPage = () => {
                                 {(agent.customerCount || 0) > 0 ? 'Active' : 'Inactive'}
                               </span>
                             </td>
-                            <td className="actions-cell">
-                              <button
-                                className="action-button edit-button"
-                                onClick={() => handleEditClick(agent)}
-                                title="Edit agent"
-                              >
-                                <span className="material-symbols-outlined">edit</span>
-                              </button>
-                              <button
-                                className="action-button delete-button"
-                                onClick={() => handleDeleteAgent(agent)}
-                                title="Delete agent"
-                                disabled={isDeleting}
-                              >
-                                <span className="material-symbols-outlined">delete</span>
-                              </button>
-                            </td>
+                            {!isViewer && (
+                              <td className="actions-cell">
+                                <button
+                                  className="action-button edit-button"
+                                  onClick={() => handleEditClick(agent)}
+                                  title="Edit agent"
+                                >
+                                  <span className="material-symbols-outlined">edit</span>
+                                </button>
+                                <button
+                                  className="action-button delete-button"
+                                  onClick={() => handleDeleteAgent(agent)}
+                                  title="Delete agent"
+                                  disabled={isDeleting}
+                                >
+                                  <span className="material-symbols-outlined">delete</span>
+                                </button>
+                              </td>
+                            )}
                           </tr>
                         ))
                       )}
@@ -637,25 +643,27 @@ export const AgentsPage = () => {
                             </span>
                           </div>
                         </div>
-                        <div className="agent-card-footer">
-                          <button
-                            className="action-button edit-button"
-                            onClick={() => handleEditClick(agent)}
-                            title="Edit agent"
-                          >
-                            <span className="material-symbols-outlined">edit</span>
-                            <span>Edit</span>
-                          </button>
-                          <button
-                            className="action-button delete-button"
-                            onClick={() => handleDeleteAgent(agent)}
-                            title="Delete agent"
-                            disabled={isDeleting}
-                          >
-                            <span className="material-symbols-outlined">delete</span>
-                            <span>Delete</span>
-                          </button>
-                        </div>
+                        {!isViewer && (
+                          <div className="agent-card-footer">
+                            <button
+                              className="action-button edit-button"
+                              onClick={() => handleEditClick(agent)}
+                              title="Edit agent"
+                            >
+                              <span className="material-symbols-outlined">edit</span>
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              className="action-button delete-button"
+                              onClick={() => handleDeleteAgent(agent)}
+                              title="Delete agent"
+                              disabled={isDeleting}
+                            >
+                              <span className="material-symbols-outlined">delete</span>
+                              <span>Delete</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))
                   )}

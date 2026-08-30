@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
 import { supabase } from '../../infrastructure/supabase/client';
+import { useAuth } from '../../infrastructure/auth/AuthContext';
 import { DashboardHeader } from '../components/DashboardHeader';
 import { DashboardSidebar } from '../components/DashboardSidebar';
 import './EngagementPage.css';
@@ -12,6 +14,7 @@ const SEND_MESSAGE_URL = 'https://ai.oumlah.cloud/webhook/broadcast-message';
 const MESSAGE_MAX = 2000;
 
 export const EngagementPage = () => {
+  const { isViewer } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [recipients, setRecipients] = useState<number | null>(null);
 
@@ -111,6 +114,11 @@ export const EngagementPage = () => {
   };
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
+  // Read-only users can't reach Engagement (write action), even by typing the URL.
+  if (isViewer) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <div className="dashboard-page">
